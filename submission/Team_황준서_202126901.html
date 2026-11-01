@@ -466,11 +466,11 @@ F   = 정답이 존재하는 클래스들의 F_c 평균</code></pre>
 <h3>6.1 test 점수 순위</h3>
 <div class="scroll">
 <table>
-  <thead><tr><th>순위</th><th>시스템</th><th class="num vcol">F<sub>ext</sub> (%) [95% 구간]</th><th class="num">F<sub>basic</sub> (%)</th><th class="num">DOAE<sub>ext</sub> (°)</th><th class="num">OSA (%)</th></tr></thead>
+  <thead><tr><th>순위</th><th>시스템</th><th class="num vcol">F<sub>ext</sub> (%)</th><th class="num">F<sub>basic</sub> (%)</th><th class="num">DOAE<sub>ext</sub> (°)</th><th class="num">OSA (%)</th></tr></thead>
   <tbody>
-  <tr><td>1</td><td>B2 &nbsp;<span class="note">영상+음향, 원래 구조</span></td><td class="num vcol">10.4 [9.1, 11.8]<span class="bar" style="width:52%"></span></td><td class="num">17.1</td><td class="num">44.9</td><td class="num">77.5</td></tr>
-  <tr><td>2</td><td>B3 &nbsp;<span class="note">B2 + 화면 전체 + 시간 창</span></td><td class="num vcol">10.4 [9.5, 11.4]<span class="bar" style="width:52%"></span></td><td class="num">15.9</td><td class="num">48.3</td><td class="num">76.3</td></tr>
-  <tr class="ref"><td>참고</td><td>B2-0 &nbsp;<span class="note">B2와 같은 구조, 영상=0 (대조군, 순위 제외)</span></td><td class="num vcol">10.2 [8.9, 11.5]<span class="bar" style="width:51%"></span></td><td class="num">17.3</td><td class="num">58.0</td><td class="num">70.6</td></tr>
+  <tr><td>1</td><td>B3 &nbsp;<span class="note">B2 + 화면 전체 + 시간 창</span></td><td class="num vcol">11.9<span class="bar" style="width:59%"></span></td><td class="num">17.1</td><td class="num">42.3</td><td class="num">76.0</td></tr>
+  <tr><td>2</td><td>B2 &nbsp;<span class="note">영상+음향, 원래 구조</span></td><td class="num vcol">11.5<span class="bar" style="width:57%"></span></td><td class="num">18.3</td><td class="num">47.6</td><td class="num">72.0</td></tr>
+  <tr class="ref"><td>참고</td><td>B2-0 &nbsp;<span class="note">B2와 같은 구조, 영상=0 (대조군, 순위 제외)</span></td><td class="num vcol">9.9<span class="bar" style="width:50%"></span></td><td class="num">17.8</td><td class="num">56.4</td><td class="num">70.4</td></tr>
   <tr class="todo"><td>—</td><td colspan="5">참가 팀 결과 (채점 후 추가)</td></tr>
   </tbody>
 </table>
@@ -480,18 +480,17 @@ F   = 정답이 존재하는 클래스들의 F_c 평균</code></pre>
 <p>같은 모델을 val로 채점한 결과이다. 개발 중 자신의 모델을 비교하는 기준으로 쓸 수 있다. 다만 베이스라인은 val에서 가장 좋은 에폭을 골랐고 val은 규모가 작기 때문에, val 점수가 test보다 크게 높게 나온다.</p>
 <div class="scroll">
 <table>
-  <thead><tr><th>시스템</th><th class="num vcol">F<sub>ext</sub> (%) [95% 구간]</th><th class="num">F<sub>basic</sub> (%)</th><th class="num">DOAE<sub>ext</sub> (°)</th><th class="num">OSA (%)</th></tr></thead>
+  <thead><tr><th>시스템</th><th class="num vcol">F<sub>ext</sub> (%)</th><th class="num">F<sub>basic</sub> (%)</th><th class="num">DOAE<sub>ext</sub> (°)</th><th class="num">OSA (%)</th></tr></thead>
   <tbody>
-  <tr><td>B2</td><td class="num vcol">17.2 [14.2, 21.3]<span class="bar" style="width:86%"></span></td><td class="num">22.2</td><td class="num">33.5</td><td class="num">83.4</td></tr>
-  <tr><td>B3</td><td class="num vcol">17.9 [14.9, 22.6]<span class="bar" style="width:89%"></span></td><td class="num">22.3</td><td class="num">30.3</td><td class="num">88.1</td></tr>
-  <tr class="ref"><td>B2-0 <span class="note">(대조군)</span></td><td class="num vcol">14.9 [12.4, 17.8]<span class="bar" style="width:74%"></span></td><td class="num">20.7</td><td class="num">41.6</td><td class="num">77.9</td></tr>
+  <tr><td>B2</td><td class="num vcol">15.8<span class="bar" style="width:79%"></span></td><td class="num">24.2</td><td class="num">54.5</td><td class="num">73.7</td></tr>
+  <tr><td>B3</td><td class="num vcol">17.8<span class="bar" style="width:89%"></span></td><td class="num">21.7</td><td class="num">28.0</td><td class="num">84.6</td></tr>
+  <tr class="ref"><td>B2-0 <span class="note">(대조군)</span></td><td class="num vcol">15.7<span class="bar" style="width:79%"></span></td><td class="num">22.6</td><td class="num">39.9</td><td class="num">78.0</td></tr>
   </tbody>
 </table>
 </div>
 
 <p class="note" style="margin-top:22px">
-  · 95% 구간은 같은 20초 창을 한 단위로 보고 창을 2,000번 다시 뽑는 부트스트랩으로 계산했다.<br>
-  · 학습에는 train만 사용했고 모델 선택은 val의 F<sub>ext</sub>로 했다. test는 모델 선택에 사용하지 않았다.
+  · 학습에는 train 전체(8,911클립)만 사용했고 200 에폭을 돌렸다. 모델 선택은 val의 F<sub>ext</sub>로 했다. test는 모델 선택에 사용하지 않았다.
 </p>
 </section>
 
@@ -541,9 +540,9 @@ python run.py predict  --dataset main20 --preset B2     # test 예측 csv와 제
 
 <h3>7.4 베이스라인 분석 결과</h3>
 <ul>
-  <li><b>영상 자체의 효과는 거의 없다.</b> test F<sub>ext</sub>에서 B2와 B2-0의 차이는 +0.2%p이고, 구간이 0을 크게 포함한다. B2가 음향만 쓰는 B1보다 3%p 정도 높은 것은 모델 구조가 커진 것으로 추정한다.</li>
-  <li><b>영상은 다른 방식으로는 활용된다.</b> 영상 모델은 앞뒤 혼동(DOAE<sub>ext</sub> − DOAE<sub>basic</sub>)이 약 11° 줄고 onscreen 정확도도 높다.</li>
-  <li><b>영상 전처리의 시야 손실.</b> 원래 전처리는 화면 가운데만 잘라 ResNet에 입력하므로 수평 시야 100° 중 약 60°만 사용한다. 화면 가장자리에서 나는 소리는 영상 모델이 보지 못하며, B3 설정이 이를 보완한다.</li>
+  <li><b>영상을 쓰면 점수가 오른다.</b> test F<sub>ext</sub>에서 영상 입력을 0으로 막은 B2-0(9.9%)보다 B2는 +1.6%p, B3는 +2.0%p 높다. 영상 효과는 B1이 아니라 B2-0과 비교해야 한다. B2는 음향만 쓰는 B1(8.0%)보다 3.5%p 높은데, 이 중 B2-0이 B1보다 높은 1.9%p는 영상이 아니라 모델 구조가 커진 효과이다.</li>
+  <li><b>영상은 방향과 화면 안/밖 판단에도 쓰인다.</b> test에서 DOAE<sub>ext</sub>는 B2-0 56.4°, B2 47.6°, B3 42.3°이고, OSA는 70.4%, 72.0%, 76.0%이다. B3에 영상을 엉뚱한 것으로 바꿔 넣으면 val F<sub>ext</sub>가 17.8%에서 11.9%(영상을 섞은 경우), 4.4%(영상=0)로 떨어지므로, 모델이 영상을 실제로 사용한다.</li>
+  <li><b>영상 전처리의 시야 손실.</b> 원래 전처리는 화면 가운데만 잘라 ResNet에 입력하므로 수평 시야 100° 중 약 60°만 사용한다. 화면 가장자리에서 나는 소리는 영상 모델이 보지 못하며, 화면 전체를 쓰는 B3 설정이 이를 보완하여 test에서 가장 높은 F<sub>ext</sub>를 얻었다.</li>
   <li><b>시간 정보 부재.</b> 원래 디코더에는 위치 인코딩과 시간 마스크가 없어서 음향 프레임이 영상의 모든 프레임을 동일하게 참조한다. 영상의 시간 위치는 모델이 데이터에서 스스로 알아내야 한다.</li>
   <li><b>과적합.</b> 모든 모델이 심하게 과적합한다. 학습 손실은 계속 내려가지만 val 손실은 초반 에폭에서 최소가 된 뒤 다시 오른다.</li>
 </ul>
