@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="ko"><head><link rel="canonical" href="https://p030610.github.io/konet/">
+</head><body>﻿
+
+
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>KoNet · 한국어 음성–입 모양 정합 판별 성능 개선</title>
+  <meta name="description" content="StableSyncNet의 한국어 적응과 음성–입 모양 정합 판별 성능 개선 연구. AIHub 한국어 입력으로 원본·Full·LoRA의 랜덤 및 고정 오프셋 결과를 비교합니다.">
+  <meta name="theme-color" content="#17181a"><meta property="og:title" content="KoNet · 한국어 음성–입 모양 정합 판별 성능 개선"><meta property="og:description" content="StableSyncNet의 한국어 적응과 음성–입 모양 정합 판별 성능 개선 연구. AIHub 한국어 입력으로 원본·Full·LoRA의 랜덤 및 고정 오프셋 결과를 비교합니다."><meta property="og:type" content="website">
+  <link rel="icon" href="https://p030610.github.io/konet/assets/favicon.svg" type="image/svg+xml"><style>
+:root {
+  color-scheme: dark;
+  --canvas: #17181a; --inset: #111315; --panel: #202426; --pill: #333333; --hover: #2a3031;
+  --text: #dddddd; --heading: #f7fcf9; --white: #ffffff; --secondary: #cccccc; --muted: #a6b0ad;
+  --border: #383e40; --accent: #b8edda; --accent-strong: #85d7b9; --accent-wash: #1e302a;
+  --warning: #e8cb91; --warning-wash: #302a20; --visual: #9db7d6;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px;
+  --s8: 32px; --s10: 40px; --s12: 48px; --s16: 64px; --s20: 80px; --s24: 96px; --s30: 120px;
+  --caption: .75rem; --small: .875rem; --body: 1rem; --lead: 1.125rem; --subtitle: 1.375rem;
+  --h3: 1.5rem; --h2: 2.5rem; --title: 4rem; --mobile-title: 3rem;
+  --radius: 8px; --media-radius: 16px; --pill-radius: 999px; --line: 1px; --focus: 2px;
+  --duration: 150ms; --content: 1200px; --reading: 760px; --table-min: 760px; --figure-width: 1080px;
+  --shadow: 0 16px 48px rgb(0 0 0 / 18%); --compact-table-min: 560px;
+  font-family: Inter, "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  font-size: 16px; line-height: 1.75; background: var(--canvas); color: var(--text);
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: var(--s24); }
+body { margin: 0; }
+a { color: inherit; text-decoration-thickness: var(--line); text-underline-offset: var(--s1); }
+button, input, select { font: inherit; }
+button, a, input, select, summary { -webkit-tap-highlight-color: transparent; }
+button, summary, select { cursor: pointer; }
+button { color: inherit; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+:focus-visible { outline: var(--focus) solid var(--accent); outline-offset: var(--s1); }
+::selection { background: var(--accent); color: var(--inset); }
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { color: var(--heading); line-height: 1.25; text-wrap: balance; word-break: keep-all; }
+h2 { font-size: var(--h2); font-weight: 600; letter-spacing: -.025em; }
+h3 { font-size: var(--h3); font-weight: 600; }
+p, li, .note, figcaption, summary { word-break: keep-all; }
+svg { display: block; max-width: 100%; }
+img { display: block; max-width: 100%; height: auto; }
+figure { margin: 0; }
+.container { width: min(100%, var(--content)); margin-inline: auto; padding-inline: var(--s5); }
+.reading { max-width: var(--reading); margin-inline: auto; }
+.stack > * + * { margin-top: var(--s5); }
+.muted { color: var(--muted); }
+.small { font-size: var(--small); }
+.mono { font-family: Consolas, monospace; font-variant-numeric: tabular-nums; }
+.accent { color: var(--accent); }
+.eyebrow { font-size: var(--caption); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.skip-link { position: fixed; top: var(--s3); left: var(--s3); transform: translateY(-200%); z-index: 20; padding: var(--s3); color: var(--inset); background: var(--accent); }
+.skip-link:focus { transform: none; }
+.site-nav { border-bottom: var(--line) solid var(--border); background: var(--canvas); }
+.nav-inner { min-height: var(--s16); display: flex; gap: var(--s6); align-items: center; justify-content: space-between; }
+.wordmark { font-size: var(--lead); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.wordmark span { color: var(--accent); }
+.nav-links { display: flex; gap: var(--s6); flex-wrap: wrap; align-items: center; }
+.nav-links a { font-size: var(--small); color: var(--muted); text-decoration: none; padding-block: var(--s3); }
+.nav-links a:hover, .nav-links a[aria-current] { color: var(--heading); }
+.nav-meta { font-size: var(--caption); color: var(--muted); white-space: nowrap; }
+.hero { text-align: center; padding-block: var(--s24) var(--s16); }
+.hero h1 { font-size: var(--title); font-weight: 400; letter-spacing: -.045em; line-height: 1.12; margin-block: var(--s5); }
+.hero h1 span { color: var(--accent); }
+.hero-title { max-width: var(--reading); font-size: var(--subtitle); line-height: 1.6; margin-inline: auto; color: var(--secondary); text-wrap: balance; }
+.hero-korean { margin-top: var(--s6); color: var(--muted); font-size: var(--body); }
+.hero-meta { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--s2) var(--s6); margin-top: var(--s6); color: var(--muted); font-size: var(--small); }
+.actions { display: flex; justify-content: center; gap: var(--s3); flex-wrap: wrap; margin-top: var(--s8); }
+.pill, .action { display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); padding: var(--s3) var(--s6); min-height: 44px; border: var(--line) solid transparent; border-radius: var(--pill-radius); background: var(--pill); text-decoration: none; font-size: var(--small); font-weight: 500; transition: transform var(--duration) ease-out, opacity var(--duration) ease-out; }
+.pill svg, .action svg { width: var(--s4); height: var(--s4); }
+.pill:hover, .action:hover { background: var(--hover); }
+.pill:active, .action:active { transform: translateY(var(--line)); }
+.pill.primary { background: var(--accent); color: var(--inset); }
+.pill.primary:hover { background: var(--accent-strong); }
+.badge { display: inline-flex; align-items: center; gap: var(--s2); font-size: var(--caption); font-weight: 500; padding: var(--s1) var(--s3); border: var(--line) solid var(--border); border-radius: var(--pill-radius); color: var(--secondary); white-space: nowrap; }
+.badge.research { color: var(--accent); background: var(--accent-wash); border-color: var(--accent-wash); }
+.badge.warning { color: var(--warning); background: var(--warning-wash); border-color: var(--warning-wash); }
+.status-dot { width: var(--s2); height: var(--s2); border-radius: var(--pill-radius); background: currentColor; }
+.section { padding-block: var(--s20); border-top: var(--line) solid var(--border); }
+.section-heading { text-align: center; margin-bottom: var(--s12); }
+.section-heading .eyebrow { margin-bottom: var(--s3); }
+.section-heading p:last-child { margin-top: var(--s4); color: var(--muted); }
+.lead { font-size: var(--lead); color: var(--secondary); line-height: 1.9; }
+.wide-figure { overflow: hidden; max-width: var(--figure-width); margin-inline: auto; border-radius: var(--media-radius); background: var(--inset); border: var(--line) solid var(--border); box-shadow: var(--shadow); }
+.figure-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); padding: var(--s4) var(--s6); border-bottom: var(--line) solid var(--border); font-size: var(--small); }
+.figure-body { padding: var(--s8); }
+.figure-caption { padding: var(--s5) var(--s6); border-top: var(--line) solid var(--border); color: var(--muted); font-size: var(--small); }
+.overview-figure { margin-top: var(--s8); }
+.claim-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: var(--s6); }
+.claim-strip > div { padding: var(--s6); border-left: var(--line) solid var(--border); }
+.claim-strip > div:first-child { border-left: 0; }
+.claim-strip strong { display: block; color: var(--heading); font-size: var(--lead); font-weight: 500; }
+.claim-strip p { margin-top: var(--s2); color: var(--muted); font-size: var(--small); }
+.two-column { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s12); }
+.numbered { padding-top: var(--s6); border-top: var(--line) solid var(--border); }
+.numbered .eyebrow { color: var(--accent); margin-bottom: var(--s4); }
+.numbered p { margin-top: var(--s4); color: var(--muted); }
+.method-steps { counter-reset: step; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s8); margin-top: var(--s10); }
+.method-step { padding-top: var(--s5); border-top: var(--line) solid var(--border); }
+.method-step h3 { font-size: var(--lead); }
+.method-step p { margin-top: var(--s3); color: var(--muted); font-size: var(--small); }
+.step-index { display: block; margin-bottom: var(--s3); color: var(--accent); font-size: var(--small); }
+.note { padding: var(--s5) var(--s6); border-left: var(--focus) solid var(--accent); background: var(--accent-wash); font-size: var(--small); }
+.note.warning { border-color: var(--warning); background: var(--warning-wash); color: var(--warning); }
+.note strong { font-weight: 600; }
+.facts { display: flex; flex-wrap: wrap; gap: var(--s3); margin-top: var(--s6); }
+.fact { padding: var(--s2) var(--s4); background: var(--panel); border-radius: var(--radius); font-size: var(--small); color: var(--secondary); }
+.table-wrap { overflow-x: auto; border: var(--line) solid var(--border); border-radius: var(--radius); }
+table { width: 100%; min-width: var(--table-min); border-collapse: collapse; text-align: left; font-size: var(--small); }
+caption { text-align: left; color: var(--muted); padding: var(--s4) var(--s5); background: var(--inset); }
+th, td { padding: var(--s5); border-bottom: var(--line) solid var(--border); vertical-align: middle; }
+th { color: var(--muted); font-weight: 500; }
+thead { background: var(--inset); }
+tbody tr:last-child td, tbody tr:last-child th { border-bottom: 0; }
+td.numeric, th.numeric { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td strong, th[scope="row"] strong { color: var(--heading); font-weight: 500; }
+td small, th small { display: block; color: var(--muted); font-size: var(--caption); margin-top: var(--s1); font-weight: 400; }
+.our-row { background: var(--accent-wash); }
+.our-row strong { color: var(--accent); }
+.board-top { display: flex; justify-content: space-between; align-items: center; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s5); }
+.segmented { display: inline-flex; flex-wrap: wrap; gap: var(--s1); border: var(--line) solid var(--border); border-radius: var(--pill-radius); padding: var(--s1); }
+.segmented button { border: 0; min-height: 44px; padding: var(--s2) var(--s5); border-radius: var(--pill-radius); background: transparent; color: var(--muted); font-size: var(--small); }
+.segmented button:hover { color: var(--heading); background: var(--hover); }
+.segmented button[aria-pressed="true"] { color: var(--accent); background: var(--accent-wash); }
+.select-wrap { display: flex; gap: var(--s3); align-items: center; font-size: var(--small); color: var(--muted); }
+select { min-height: 44px; color: var(--text); background: var(--panel); border: var(--line) solid var(--border); border-radius: var(--radius); padding: var(--s2) var(--s3); }
+.board-note { display: flex; gap: var(--s4); justify-content: space-between; flex-wrap: wrap; margin-top: var(--s4); color: var(--muted); font-size: var(--small); }
+.empty-state { margin-top: var(--s6); padding: var(--s6); background: var(--inset); border: var(--line) dashed var(--border); border-radius: var(--radius); }
+.empty-state strong { display: block; color: var(--heading); font-size: var(--body); }
+.empty-state p { margin-top: var(--s2); font-size: var(--small); color: var(--muted); }
+.metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s6); }
+.metric-item { border-top: var(--line) solid var(--border); padding-top: var(--s5); }
+.metric-item h3 { font-size: var(--lead); }
+.metric-item p { font-size: var(--small); color: var(--muted); margin-top: var(--s3); }
+.formula { display: block; padding: var(--s5); background: var(--inset); border-radius: var(--radius); font-size: var(--small); overflow-wrap: anywhere; }
+details { border-top: var(--line) solid var(--border); padding-block: var(--s5); }
+summary { color: var(--heading); min-height: 44px; padding-block: var(--s2); }
+details > div { padding-top: var(--s4); }
+.demo-controls { display: flex; gap: var(--s6); align-items: center; flex-wrap: wrap; margin-top: var(--s6); }
+.range-group { flex: 1 1 240px; }
+.range-label { display: flex; justify-content: space-between; gap: var(--s3); font-size: var(--small); margin-bottom: var(--s3); }
+input[type="range"] { width: 100%; accent-color: var(--accent); min-height: 44px; margin: 0; cursor: pointer; }
+.range-ticks { display: flex; justify-content: space-between; font-size: var(--caption); color: var(--muted); }
+.demo-status { margin-top: var(--s5); color: var(--accent); font-size: var(--small); }
+#audio-track { transition: transform var(--duration) ease-out; }
+.resources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5); }
+.resource { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s6); background: var(--panel); border: var(--line) solid var(--border); border-radius: var(--radius); text-decoration: none; }
+.resource:hover { border-color: var(--muted); }
+.resource strong { font-size: var(--lead); color: var(--heading); font-weight: 500; }
+.resource p { color: var(--muted); font-size: var(--small); }
+.reference-list { margin: 0; padding-left: var(--s5); color: var(--muted); font-size: var(--small); }
+.reference-list li + li { margin-top: var(--s3); }
+.footer { border-top: var(--line) solid var(--border); padding-block: var(--s10); color: var(--muted); font-size: var(--small); }
+.footer-inner { display: flex; justify-content: space-between; gap: var(--s6); flex-wrap: wrap; }
+.screen-reader-only { position: absolute; width: var(--line); height: var(--line); padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.showcase { padding-block: var(--s12); }
+.presentation-hero { padding-block: var(--s12) var(--s8); }
+.presentation-hero .hero-meta { margin-top: var(--s3); }
+.presentation-hero .hero-title { font-size: var(--h3); }
+.talk-section .section-heading { text-align: left; }
+.talk-section .reading { margin-inline: 0; }
+.talk-heading { display: flex; align-items: start; justify-content: space-between; gap: var(--s6); }
+.talk-heading .badge { margin-top: var(--s2); }
+.demo-toolbar, .demo-playback { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s4); justify-content: space-between; }
+.demo-description { color: var(--muted); margin-block: var(--s4) var(--s6); min-height: var(--s12); }
+.media-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s5); }
+.media-stage { min-width: 0; border: var(--line) solid var(--border); border-radius: var(--media-radius); overflow: hidden; background: var(--inset); }
+.media-stage.playing { border-color: var(--accent); }
+.media-heading { padding: var(--s4); display: flex; gap: var(--s3); align-items: center; }
+.media-heading h3 { font-size: var(--lead); }
+.media-heading .step-index { margin: 0; }
+.media-canvas { aspect-ratio: 16 / 9; display: flex; flex-direction: column; justify-content: center; background: var(--panel); }
+.media-canvas video { width: 100%; height: 100%; object-fit: contain; }
+.media-canvas audio { width: 100%; min-width: 0; padding: var(--s2); }
+.audio-title { display: grid; gap: var(--s1); text-align: center; padding: var(--s3); }
+.audio-title strong { font-size: var(--lead); color: var(--heading); }
+.media-replace { padding: var(--s2) var(--s4); font-size: var(--caption); }
+.media-replace summary { color: var(--muted); }
+.media-replace input { width: 100%; min-width: 0; display: block; margin-top: var(--s2); font-size: var(--caption); }
+.demo-playback { justify-content: start; margin-top: var(--s6); }
+.demo-playback p { flex-basis: 100%; font-size: var(--small); color: var(--accent); min-height: var(--s8); }
+.primary-action { background: var(--accent); color: var(--inset); }
+.primary-action:hover { background: var(--accent-strong); }
+.section-note { margin-top: var(--s6); }
+.compact-table table { min-width: var(--compact-table-min); }
+.metric-item .formula { margin-top: var(--s4); }
+.architecture-flow { padding: var(--s6); display: grid; gap: var(--s5); }
+.architecture-stream { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s4); }
+.architecture-node { padding: var(--s5); border: var(--line) solid var(--border); border-radius: var(--radius); background: var(--panel); }
+.architecture-node strong, .architecture-node span { display: block; }
+.architecture-node span { margin-top: var(--s2); color: var(--muted); font-size: var(--small); }
+.architecture-output { text-align: center; padding: var(--s5); border-top: var(--line) solid var(--border); }
+.architecture-output p { margin-top: var(--s3); }
+.talk-outline { display: flex; flex-wrap: wrap; gap: var(--s2); justify-content: center; margin-top: var(--s6); }
+.talk-outline a { font-size: var(--caption); color: var(--muted); text-decoration: none; padding: var(--s2); }
+.appendix-label { color: var(--accent); }
+.sync-legend { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s5); padding: var(--s5) var(--s6); font-size: var(--small); color: var(--muted); }
+.sync-legend > span { display: inline-flex; align-items: center; gap: var(--s2); }
+.visual-key, .audio-key { width: var(--s3); height: var(--s3); border-radius: var(--line); background: var(--visual); }
+.audio-key { background: var(--accent); }
+.sync-diagram { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .22fr); gap: var(--s6); padding: 0 var(--s6) var(--s6); }
+.sync-lane { display: grid; grid-template-columns: minmax(0, .9fr) var(--s6) minmax(0, 1.35fr) var(--s6) minmax(0, .65fr); align-items: center; gap: var(--s2); color: var(--visual); }
+.audio-lane { color: var(--accent); }
+.sync-input, .sync-encoder, .sync-vector, .sync-score { min-width: 0; padding: var(--s4); border: var(--line) solid var(--border); border-radius: var(--radius); background: var(--panel); word-break: keep-all; }
+.sync-input, .sync-encoder, .sync-vector { align-self: stretch; }
+.sync-diagram h3 { font-size: var(--lead); margin-block: var(--s2) var(--s3); }
+.sync-diagram .eyebrow { color: inherit; letter-spacing: .06em; }
+.sync-diagram p { font-size: var(--small); color: var(--secondary); }
+.sync-diagram code { display: block; margin-block: var(--s3) var(--s2); font-size: var(--small); color: var(--heading); }
+.sync-input .small, .sync-encoder > .small { display: block; font-size: var(--caption); margin-top: var(--s2); }
+.frame-stack, .mel-drawing { width: 100%; max-height: var(--s12); margin-bottom: var(--s3); }
+.flow-arrow { font-size: var(--h3); text-align: center; }
+.encoder-stages { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s2); margin-bottom: var(--s3); }
+.encoder-stages span { display: block; padding: var(--s2); border-left: var(--focus) solid currentColor; color: var(--secondary); font-size: var(--caption); background: var(--inset); }
+.encoder-stages .attention-stage { color: inherit; }
+.lora-tag { display: block; padding: var(--s2) var(--s3); margin-top: var(--s4); border: var(--line) dashed currentColor; font-size: var(--caption); }
+.sync-vector { display: flex; flex-direction: column; justify-content: center; text-align: center; }
+.sync-vector > strong { font: italic var(--title) Georgia, serif; line-height: 1.2; }
+.vector-bars { display: flex; align-items: center; justify-content: center; gap: var(--s1); height: var(--s12); margin-block: var(--s3); }
+.vector-bars i { width: var(--s1); height: 40%; background: currentColor; }
+.vector-bars i:nth-child(2n) { height: 80%; }
+.vector-bars i:nth-child(3n) { height: 60%; }
+.sync-score { grid-column: 2; grid-row: 1 / 3; align-self: center; text-align: center; position: relative; background: var(--accent-wash); }
+.sync-score > strong { font-size: var(--small); color: var(--heading); }
+.sync-score .score-equation { font: italic var(--h2) Georgia, serif; color: var(--accent); margin-block: var(--s4); white-space: nowrap; }
+.merge-arrow { display: block; position: absolute; left: calc(-1 * var(--s6)); top: 40%; line-height: 3; color: var(--muted); }
+.score-targets { display: grid; gap: var(--s2); margin-block: var(--s5); text-align: left; font-size: var(--caption); }
+.score-targets span { display: flex; justify-content: space-between; gap: var(--s2); }
+.architecture-details .mono { overflow-wrap: anywhere; }
+.reference-recording { max-width: var(--reading); }
+.comparison-footage { max-width: none; }
+.reference-recording.comparison-footage video { aspect-ratio: auto; }
+.comparison-labels { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--s3); padding: var(--s3); background: var(--panel); text-align: center; font-size: var(--small); }
+.reference-recording video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+.reference-recording audio { display: block; width: 100%; }
+.reference-recording figcaption { margin-top: var(--s3); }
+@media (max-width: 960px) {
+  .encoder-stages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .encoder-stages .attention-stage { grid-column: 1 / -1; }
+  .sync-diagram { grid-template-columns: minmax(0, 1fr); }
+  .sync-score { grid-column: 1; grid-row: auto; }
+  .merge-arrow { position: static; font-size: var(--h3); line-height: 1; margin-bottom: var(--s4); }
+  .merge-arrow br { display: none; }
+  .nav-meta { display: none; }
+  .nav-links { gap: var(--s4); }
+  .method-steps, .metric-grid { grid-template-columns: 1fr; }
+  .method-step p { max-width: var(--reading); }
+  .media-grid { grid-template-columns: 1fr; }
+  .media-stage { max-width: var(--reading); width: 100%; margin-inline: auto; }
+  .talk-heading { flex-direction: column; gap: var(--s3); }
+  .talk-heading .badge { margin-top: 0; }
+}
+@media (max-width: 640px) {
+  .sync-diagram { padding-inline: var(--s4); }
+  .sync-lane { grid-template-columns: minmax(0, 1fr); gap: var(--s3); }
+  .sync-legend { padding-inline: var(--s4); }
+  .sync-lane .flow-arrow { transform: rotate(90deg); }
+  .sync-input .frame-stack, .sync-input .mel-drawing { max-width: var(--s30); }
+  .encoder-stages { grid-template-columns: minmax(0, 1fr); }
+  .sync-vector > strong { font-size: var(--h2); }
+  .sync-vector { display: grid; grid-template-columns: auto auto; align-items: center; gap: var(--s2) var(--s4); text-align: left; }
+  .sync-vector .eyebrow, .sync-vector p { grid-column: 1 / 3; }
+  .vector-bars { margin: 0; justify-content: start; }
+  h2 { font-size: var(--h3); }
+  .hero { padding-block: var(--s16) var(--s12); }
+  .hero h1 { font-size: var(--mobile-title); }
+  .hero-title { font-size: var(--lead); }
+  .nav-inner { flex-direction: column; gap: 0; padding-block: var(--s3); }
+  .nav-links { gap: var(--s4); justify-content: center; }
+  .section { padding-block: var(--s12); }
+  .section-heading { margin-bottom: var(--s8); }
+  .claim-strip, .two-column, .resources { grid-template-columns: 1fr; }
+  .claim-strip > div { border-left: 0; border-top: var(--line) solid var(--border); padding-inline: 0; }
+  .claim-strip > div:first-child { border-top: 0; }
+  .figure-body { padding: var(--s4); }
+  .figure-top { flex-wrap: wrap; padding-inline: var(--s4); }
+  .figure-caption { padding-inline: var(--s4); }
+  th, td { padding: var(--s4); }
+  .board-top { align-items: stretch; }
+  .segmented { border-radius: var(--radius); width: 100%; }
+  .segmented button { flex: 1 1 auto; padding-inline: var(--s3); }
+  .note { padding: var(--s4); }
+  .lead { font-size: var(--body); }
+  .architecture-stream { grid-template-columns: 1fr; }
+  .architecture-flow { padding: var(--s4); }
+  .presentation-hero { padding-block: var(--s8); }
+  .demo-description { min-height: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
+}
+
+</style>
+  
+
+
+<a class="skip-link" href="#main">본문으로 바로가기</a>
+<header class="site-nav"><nav class="container nav-inner" aria-label="프로젝트 목차"><a class="wordmark" href="#top">Ko<span>Net</span></a><div class="nav-links"><a href="#generation-demos">데모</a><a href="#problem">문제</a><a href="#baseline">비교 모델</a><a href="#evaluation">지표</a><a href="#architecture">구조</a><a href="#method">해결 방법</a><a href="#leaderboard">리더보드</a><a href="#resources">코드·데이터</a></div></nav></header>
+<main id="main">
+  <section class="hero presentation-hero container" id="top" aria-labelledby="project-title">
+    <p class="eyebrow">Speech Recognition Challenge 2026 · KoNet</p>
+    <h1 id="project-title">Ko<span>Net</span></h1>
+    <p class="hero-title">한국어 음성–입 모양<br>정합 판별 성능 개선</p>
+    <p class="hero-korean reading">KoNet은 StableSyncNet을 한국어에 적응시켜 음성과 입 모양의 시간 정합 판별 성능을 개선하는 연구입니다. AIHub 한국어 입력에서 원본·Full·LoRA를 비교하며, 생성 영상은 별도 시연 예시로 제시합니다.</p>
+    <div class="hero-meta" aria-label="학생 정보"><span>박성재</span><span>202020814</span><span>소프트웨어학과</span></div>
+    <div class="actions"><a class="pill primary" href="#challenge">Challenge 소개</a><a class="pill" href="https://github.com/p030610/konet">Project GitHub ↗</a><a class="pill" href="#leaderboard">Leaderboard</a></div><div class="talk-outline"><a href="#generation-demos">01 데모</a><a href="#problem">02 문제</a><a href="#baseline">03 비교 모델</a><a href="#evaluation">04 지표</a><a href="#architecture">05 구조</a><a href="#method">06 한국어 적응</a></div>
+  </section>
+
+
+<section class="section" id="challenge" aria-labelledby="challenge-title"><div class="container"><div class="section-heading"><p class="eyebrow">Challenge description / KoNet</p><h2 id="challenge-title">한국어 발화의 작은 시간차를 구별하기</h2><p>음성과 입 모양의 시간 정합성을 판단하는 audio–visual synchronization challenge</p></div><div class="two-column"><article class="numbered"><p class="eyebrow">Task &amp; pipeline</p><h3>입력 쌍에서 동기화 점수까지</h3><p>같은 발화의 입 주변 영상 16프레임과 음성 mel을 입력받아 하나의 유사도 점수를 출력합니다. 두 인코더가 각각 2048차원 특징을 만들고 cosine similarity로 결합합니다.</p><p>영상·음성 전처리 → 독립 인코더 → 유사도 점수 → 중심과 시간차 비교 순서로 평가합니다. 이번 연구의 목표는 실제 한국어 발화에서 정합과 시간 이동 입력을 구별하는 성능의 개선입니다.</p></article><article class="numbered"><p class="eyebrow">Baseline &amp; target</p><h3>같은 입력에서 세 checkpoint 비교</h3><p>공식 StableSyncNet 원본, 한국어 Full fine-tuning epoch 9, LoRA rank 8·alpha 16 epoch 5를 비교합니다. held-out 공통지원 코호트에서 랜덤 오프셋 승률과 고정 시간차·최소 margin을 함께 비교합니다.</p><p>참가 모델은 고정 split과 입력 전처리를 따르고, 동일한 B-window의 중심·음·양 세 점수를 제출하는 방식으로 비교할 수 있습니다. 현 단계는 완료된 세 모델의 오프라인 평가입니다.</p></article></div></div></section>
+  <section class="section talk-section" id="generation-demos" aria-labelledby="generation-title"><div class="container">
+    <div class="section-heading talk-heading"><div><p class="eyebrow">01A / What talking-face generators do</p><h2 id="generation-title">생성 모델 시연 예시</h2><p>아래 영상은 별도 생성 모델의 활용 예시이며, 이번 한국어 판별 모델의 학습·평가 자료와 구분됩니다.</p></div></div>
+    <div class="stack">
+      <article class="media-stage generator-example" id="generator-hdtf">
+        <div class="media-heading"><h3>MuseTalk 1.5 · HDTF</h3><span class="badge">English · Cross-audio · 30초</span></div>
+        <figure class="reference-recording comparison-footage"><div class="comparison-labels"><span>Original · 왼쪽</span><span>Inferred · 오른쪽</span></div><video controls="" playsinline="" preload="metadata" width="1440" height="720" poster="https://p030610.github.io/konet/assets/demos/hdtf-johnthune-cross-johnyarmuth-v1-comparison.jpg" aria-label="HDTF 원본과 다른 음성으로 구동한 MuseTalk 결과 좌우 비교 30초" data-playback-label="HDTF MuseTalk cross-audio 30초 비교"><source src="https://p030610.github.io/konet/assets/demos/hdtf-johnthune-cross-johnyarmuth-v1-comparison.mp4" type="video/mp4"></video><figcaption class="small muted">30초 · 얼굴 영역 확대 · 별도 영어 구동 음성</figcaption></figure>
+        <div class="media-heading"><p class="small muted">JohnThune의 영상에 다른 화자인 JohnYarmuth의 영어 음성을 넣어 새로 생성했습니다. 양쪽 영상은 같은 시점을 재생하며, 소리는 구동 음성 한 트랙입니다. 왼쪽 입 움직임은 원래 발화이므로 새 음성의 정답과 구분해 보세요.</p></div>
+        <details class="media-replace"><summary>입력 영상·음성 및 생성 조건</summary><div class="stack">
+          <figure class="reference-recording"><video controls="" playsinline="" preload="metadata" width="1280" height="720" poster="https://p030610.github.io/konet/assets/demos/hdtf-johnthune-cross-johnyarmuth-v1-source.jpg" aria-label="HDTF JohnThune 원래 음성이 포함된 전체 얼굴 영상 30초" data-playback-label="HDTF JohnThune 원본 영상"><source src="https://p030610.github.io/konet/assets/demos/hdtf-johnthune-cross-johnyarmuth-v1-source.mp4" type="video/mp4"></video><figcaption>원본 입력 · JohnThune의 영상과 원래 영어 음성</figcaption></figure>
+          <figure class="reference-recording"><audio controls="" preload="metadata" aria-label="다른 화자 JohnYarmuth의 실제 영어 구동 음성 30초" data-playback-label="HDTF JohnYarmuth 구동 음성"><source src="https://p030610.github.io/konet/assets/demos/hdtf-johnthune-cross-johnyarmuth-v1-audio.wav" type="audio/wav"></audio><figcaption>실제 구동 음성 · JohnYarmuth의 별도 영어 발화</figcaption></figure>
+          <p class="small muted">전체 얼굴과 배경을 포함한 HDTF 원본을 1280×720·25fps로 준비해 MuseTalk 1.5에 입력했습니다. 원본 모델 가중치로 새로 추론한 cross-audio 데모이며, KoNet 연결 실험은 후속 단계입니다.</p>
+          <p class="small muted"><a href="https://p030610.github.io/konet/assets/demos/hdtf-johnthune-cross-johnyarmuth-v1-result.mp4">생성 영상 단독 보기 ↗</a> · <a href="https://p030610.github.io/konet/data/hdtf-demo.json">입력·생성 조건 ↗</a></p>
+        </div></details>
+      </article>
+      <article class="media-stage generator-example" id="generator-korean">
+        <div class="media-heading"><h3>LatentSync 1.5</h3><span class="badge">한국어 · 애니메이션</span></div>
+        <figure class="reference-recording comparison-footage"><div class="comparison-labels"><span>Original · 왼쪽</span><span>Inferred · 오른쪽</span></div><video controls="" playsinline="" preload="metadata" width="1920" height="540" poster="https://p030610.github.io/konet/assets/demos/opening-latentsync-ko-v2-comparison.jpg" aria-label="LatentSync 키리코 원본 왼쪽 생성 오른쪽 비교 7초" data-playback-label="LatentSync 키리코 좌우 비교"><source src="https://p030610.github.io/konet/assets/demos/opening-latentsync-ko-v2-comparison.mp4" type="video/mp4"></video><figcaption class="small muted">7초 전체 유효 구간 · 한국어 구동 음성 · 전체 화면 지원</figcaption></figure>
+        <div class="media-heading"><p class="small muted">키리코 · 영어 원본 영상을 한국어 음성으로 재더빙한 기존 결과. 왼쪽 영어 입 모양은 한국어 발화의 정답과 구분됩니다.</p></div>
+        <details class="media-replace"><summary>원본 영상·입력 음성 확인</summary><div class="stack">
+          <figure class="reference-recording"><video controls="" playsinline="" preload="metadata" width="960" height="540" poster="https://p030610.github.io/konet/assets/demos/opening-latentsync-ko-v2-source.jpg" aria-label="키리코 데모의 영어 원본 영상" data-playback-label="키리코 영어 원본"><source src="https://p030610.github.io/konet/assets/demos/opening-latentsync-ko-v2-source.mp4" type="video/mp4"></video><figcaption>원본 영상 · 영어 입 모양과 영어 음성</figcaption></figure>
+          <figure class="reference-recording"><audio controls="" preload="metadata" aria-label="키리코 데모의 한국어 구동 음성" data-playback-label="키리코 한국어 구동 음성"><source src="https://p030610.github.io/konet/assets/demos/opening-latentsync-ko-v2-audio.wav" type="audio/wav"></audio><figcaption>실제 구동 음성 · 기존 분리 한국어 vocal track</figcaption></figure>
+          <p class="small muted">kiriko.front-02.korean · 0–7초, 175프레임의 입력 구간. 입력 밖의 생성 tail 2프레임은 제외했습니다. <a href="https://p030610.github.io/konet/assets/demos/opening-latentsync-ko-v2-result.mp4">생성 영상 단독 보기 ↗</a></p>
+        </div></details>
+      </article>
+    </div>
+    <div class="stack section-note" id="heavy-demos">
+      <div><p class="eyebrow">Animation / Cross-language redubbing</p><h3>Meet the Heavy · 한국어 재더빙</h3><p>영어 원본 영상에 한국어 음성을 넣었습니다. 두 모델 모두 같은 24초 구간과 같은 구동 음성을 사용합니다.</p></div>
+      <article class="media-stage generator-example" id="generator-heavy-muse">
+        <div class="media-heading"><h3>MuseTalk 1.5 · Heavy</h3><span class="badge">한국어 · 24초</span></div>
+        <figure class="reference-recording comparison-footage"><div class="comparison-labels"><span>영어 원본 · 왼쪽</span><span>한국어 생성 · 오른쪽</span></div><video controls="" playsinline="" preload="metadata" width="1920" height="588" poster="https://p030610.github.io/konet/assets/demos/heavy-musetalk15-comparison.jpg" aria-label="헤비 MuseTalk 영어 원본과 한국어 생성 좌우 비교 24초" data-playback-label="헤비 MuseTalk 한국어 비교"><source src="https://p030610.github.io/konet/assets/demos/heavy-musetalk15-comparison.mp4" type="video/mp4"></video><figcaption class="small muted">24초 연속 장면 · 공통 한국어 음성 · 전체 화면 지원</figcaption></figure>
+      </article>
+      <article class="media-stage generator-example" id="generator-heavy-latent">
+        <div class="media-heading"><h3>LatentSync 1.5 · Heavy</h3><span class="badge">한국어 · 24초</span></div>
+        <figure class="reference-recording comparison-footage"><div class="comparison-labels"><span>영어 원본 · 왼쪽</span><span>한국어 생성 · 오른쪽</span></div><video controls="" playsinline="" preload="metadata" width="1920" height="588" poster="https://p030610.github.io/konet/assets/demos/heavy-latentsync15-comparison.jpg" aria-label="헤비 LatentSync 영어 원본과 한국어 생성 좌우 비교 24초" data-playback-label="헤비 LatentSync 한국어 비교"><source src="https://p030610.github.io/konet/assets/demos/heavy-latentsync15-comparison.mp4" type="video/mp4"></video><figcaption class="small muted">동일한 24초 · 입력 밖의 생성 tail 2프레임 제외</figcaption></figure>
+      </article>
+      <p class="small muted">원본 10–34초 구간 · 한국어 더빙에서 Demucs로 분리한 추정 vocal을 사용했습니다. 왼쪽은 영어 입 모양이며 한국어 정답 영상과 구분됩니다. KoNet 적용 전 생성 모델의 정성 데모입니다.</p>
+      <p class="small muted"><a href="https://www.youtube.com/watch?v=jHgZh4GV9G0" target="_blank" rel="noopener noreferrer">영어 원본 · Valve ↗</a> · <a href="https://www.youtube.com/watch?v=p13JMWdrreY" target="_blank" rel="noopener noreferrer">한국어 더빙 출처 ↗</a> · <a href="https://p030610.github.io/konet/data/heavy-demos.json">실행 조건·영상 정보 ↗</a></p>
+    </div>
+    <details class="section-note" id="anime-demos"><summary>긴 애니메이션 비교 보기 · 모델별 38.4초</summary><div class="stack">
+      <p>기존 영어 애니메이션 4개 × 9.6초를 연결했습니다. 두 모델에 같은 원본과 같은 음성을 넣은 same-pair 결과입니다. 한 장면의 연속 38.4초가 아닌 4개 클립 모음입니다.</p>
+      <p class="small muted">구간: 0–9.6초 ENclip05254 → 9.6–19.2초 ENclip05418 → 19.2–28.8초 ENclip07292 → 28.8–38.4초 ENclip09733. 원본은 합성 LongCat 애니메이션 reference이며, 독립 검증된 실제 AV 정답과 구분됩니다.</p>
+      <article class="media-stage generator-example" id="generator-anime-muse"><div class="media-heading"><h3>MuseTalk 1.5 · Anime</h3><span class="badge">English · 4 clips</span></div><figure class="reference-recording comparison-footage"><div class="comparison-labels"><span>Original · 왼쪽</span><span>Inferred · 오른쪽</span></div><video controls="" playsinline="" preload="metadata" width="1536" height="768" poster="https://p030610.github.io/konet/assets/demos/opening-anime-musetalk15-v2-comparison.jpg" aria-label="MuseTalk 애니메이션 원본 생성 좌우 비교 38.4초" data-playback-label="MuseTalk 애니메이션 4클립 비교"><source src="https://p030610.github.io/konet/assets/demos/opening-anime-musetalk15-v2-comparison.mp4" type="video/mp4"></video><figcaption class="small muted">38.4초 · 원본 padding 유지 · 공통 구동 음성 · 전체 화면 지원</figcaption></figure><div class="media-heading"><p class="small muted"><a href="https://p030610.github.io/konet/assets/demos/opening-anime-musetalk15-v2-source.mp4">원본 영상·원음 ↗</a> · <a href="https://p030610.github.io/konet/assets/demos/opening-anime-musetalk15-v2-audio.wav">실제 구동 음성 ↗</a> · <a href="https://p030610.github.io/konet/assets/demos/opening-anime-musetalk15-v2-result.mp4">생성 영상 단독 ↗</a></p></div></article>
+      <article class="media-stage generator-example" id="generator-anime-latent"><div class="media-heading"><h3>LatentSync 1.5 · Anime</h3><span class="badge">English · 4 clips</span></div><figure class="reference-recording comparison-footage"><div class="comparison-labels"><span>Original · 왼쪽</span><span>Inferred · 오른쪽</span></div><video controls="" playsinline="" preload="metadata" width="1536" height="768" poster="https://p030610.github.io/konet/assets/demos/opening-anime-latentsync15-v2-comparison.jpg" aria-label="LatentSync 애니메이션 원본 생성 좌우 비교 38.4초" data-playback-label="LatentSync 애니메이션 4클립 비교"><source src="https://p030610.github.io/konet/assets/demos/opening-anime-latentsync15-v2-comparison.mp4" type="video/mp4"></video><figcaption class="small muted">동일한 4개 클립 · 38.4초 · 입력 구간 밖의 생성 tail 제외</figcaption></figure><div class="media-heading"><p class="small muted"><a href="https://p030610.github.io/konet/assets/demos/opening-anime-latentsync15-v2-source.mp4">원본 영상·원음 ↗</a> · <a href="https://p030610.github.io/konet/assets/demos/opening-anime-latentsync15-v2-audio.wav">실제 구동 음성 ↗</a> · <a href="https://p030610.github.io/konet/assets/demos/opening-anime-latentsync15-v2-result.mp4">생성 영상 단독 ↗</a></p></div></article>
+    </div></details>
+    <p class="small muted section-note">HDTF 실사·키리코·헤비·추가 애니메이션은 모델의 활용을 소개하는 정성 데모로, KoNet 적용 결과나 통제된 성능 비교와는 별도입니다. <a href="https://p030610.github.io/konet/data/generator-demos.json" target="_blank" rel="noopener noreferrer">키리코·추가 애니메이션 정보 ↗</a></p>
+    <div class="note section-note"><strong>그렇다면, 동기화를 가르치는 모델은?</strong> 생성 모델은 영상과 음성으로 입 모양을 만듭니다. 다음 데모에서는 두 입력이 맞는지 점수를 주는 supervisor를 직접 확인합니다.</div>
+    <div class="actions section-note"><a class="action" href="#demo">다음: 한국어 감독 점수 비교 ↓</a></div>
+  </div></section>
+
+  <section class="section talk-section" id="demo" aria-labelledby="demo-title"><div class="container">
+    <div class="section-heading talk-heading"><div><p class="eyebrow">01B / Recorded supervisor scores</p><h2 id="demo-title">시간 이동에 따라 달라지는 감독 점수.</h2><p>정합 입력 → 같은 한국어 음성 → 의도적으로 시간 이동한 입력</p></div></div>
+    ﻿<div id="c293-local-player" class="stack" data-c293-local-root>
+  <p class="small muted" data-c293-intro>기기의 C293 표시 파일을 선택해 바로 재생합니다. 파일 처리는 브라우저 내부에서 완료됩니다. <a href="https://www.aihub.or.kr/aihubnews/faq/list.do" target="_blank" rel="noopener noreferrer">AIHub FAQ의 재배포 조건</a>에 따라 기기에 보유한 원본 표시 파일을 연결합니다.</p>
+  <div class="two-column">
+    <article class="media-stage" data-c293-stage="0">
+      <div class="media-heading"><h3>정합 입력 · 0ms</h3><span class="badge" data-c293-badge="0">기록 cosine 0.2321</span></div>
+      <div class="media-canvas"><p class="media-heading small" data-c293-empty="0">아래에서 정합 MP4를 선택해 주세요.</p><video id="c293-aligned" hidden controls playsinline preload="metadata" width="960" height="540" aria-label="C293 정합 입력 0ms, 같은 한국어 음성"></video></div>
+      <p class="media-heading small" data-c293-score="0">기록 점수 적용 파일 · 선택 대기</p>
+      <div class="media-replace"><label for="c293-aligned-file">정합 영상 파일<input id="c293-aligned-file" data-c293-pick="0" type="file" accept="video/mp4"></label><p class="small muted">c293-supervisor-v2-source.mp4</p></div>
+    </article>
+    <article class="media-stage" data-c293-stage="1">
+      <div class="media-heading"><h3>영상 이동 · −640ms</h3><span class="badge" data-c293-badge="1">기록 cosine 0.6257</span></div>
+      <div class="media-canvas"><p class="media-heading small" data-c293-empty="1">아래에서 시간 이동 MP4를 선택해 주세요.</p><video id="c293-shifted" hidden controls playsinline preload="metadata" width="960" height="540" aria-label="C293 영상 640ms 이른 구간, 같은 한국어 음성"></video></div>
+      <p class="media-heading small" data-c293-score="1">기록 점수 적용 파일 · 선택 대기</p>
+      <div class="media-replace"><label for="c293-shifted-file">시간 이동 영상 파일<input id="c293-shifted-file" data-c293-pick="1" type="file" accept="video/mp4"></label><p class="small muted">c293-supervisor-v2-shifted.mp4</p></div>
+    </article>
+  </div>
+  <div class="demo-playback"><button type="button" class="action primary-action" id="c293-play" disabled>정합 → 시간 이동 연속 재생</button><button type="button" class="action" id="c293-stop">정지 · 처음으로</button><p id="c293-status" role="status" aria-live="polite">두 원본 표시 파일을 선택하면 같은 한국어 음성으로 비교할 수 있습니다.</p></div>
+  <p class="note small" id="c293-window">각 영상 4초 · 기록 점수는 재생 1.28–1.92초의 16프레임 구간에 해당합니다.</p>
+</div>
+
+    <p class="small muted section-note">선정된 감독 점수 비교 사례 1개 · AIHub 538 C293 개발 validation. 동일 음성에 영상 시작점만 바꾼 16프레임·0.64초 평가 창의 점수입니다.</p>
+    <div class="table-wrap compact-table section-note" role="region" aria-label="C293 감독 점수 역전" tabindex="0"><table><caption>원본 StableSyncNet의 기록된 cosine 점수 · 높을수록 정합으로 판단</caption><thead><tr><th scope="col">입력 조건</th><th scope="col">평가 label</th><th scope="col" class="numeric">점수</th></tr></thead><tbody><tr><th scope="row">동일 녹화의 정합 입력 · 0ms</th><td>1 · 정합</td><td class="numeric">0.2321</td></tr><tr><th scope="row">영상만 640ms 이른 구간 · −640ms</th><td>0 · 비정합</td><td class="numeric">0.6257 · 더 높음</td></tr></tbody></table></div>
+    <details id="failure-evidence"><summary>시간 이동의 방향·점수 측정 구간·원점수 근거</summary><div class="stack">
+      <p><strong>실제 평가 입력</strong> — window ID <code>TS10:C293:J:1:F:03:002:noise=1:48</code>. 공통 음성 시작은 30,720sample / 16kHz = 1.92초입니다. 정합 영상은 48/25 = 1.92초, 이동 영상은 32/25 = 1.28초부터 시작합니다. 따라서 Δ = 영상 시작 − 음성 시작 = −640ms이며, 음성이 영상보다 640ms 앞서는 조건입니다.</p>
+      <p><strong>영상과 점수의 범위</strong> — 모델은 정렬된 lower-half RGB와 mel52열을 사용했고, mel에는 기준점−25ms부터 +662.5ms까지의 파형 문맥이 포함됩니다. </p>
+      
+      <p class="small muted">후보 C032는 음량이 매우 작아(mean −49.5dBFS) 무음의 영향이 섞일 수 있으므로 제외했습니다. C293는 입의 발화 움직임과 음량(mean −21.0dBFS)을 확인했으나 음소별 정답 검증은 별도입니다. 원본 녹화의 label 1은 평가 데이터의 정합 가정이며, 절대 A/V offset의 독립 인증과 구분합니다.</p>
+      
+    </div></details>
+    <div class="note section-note"><strong>기록된 점수의 해석</strong> 원본 녹화 기준점보다 −640ms 입력의 cosine 점수가 높았습니다. 녹화 자체의 A/V offset도 영향을 줄 수 있으므로, 다음 집계에서는 A-fold로 중심을 선택한 뒤 별도 B-fold를 비교합니다.</div>
+  </div></section>
+
+  <section class="section talk-section" id="problem" aria-labelledby="problem-title"><div class="container">
+    <div class="section-heading talk-heading"><div><p class="eyebrow">02 / Domain gap &amp; data</p><h2 id="problem-title">한국어 발화에 맞는 정합 판별로.</h2><p>한국어 추가 학습이 음성–입 모양의 시간차 구별에 미치는 영향을 확인합니다.</p></div></div>
+    <div class="two-column">
+      <article class="numbered"><p class="eyebrow">Published evidence</p><h3>공개 감독 모델을 출발점으로</h3><p>StableSyncNet은 영상과 음성을 각각 인코딩해 유사도 점수를 계산합니다. 공개 원본 모델을 기준으로 한국어 적응 후의 점수 판별 능력을 같은 입력에서 비교합니다.</p><p><a href="https://github.com/Rudrabha/Wav2Lip#training-on-datasets-other-than-lrs2" target="_blank" rel="noopener noreferrer">Wav2Lip 학습 안내 ↗</a> · <a href="https://arxiv.org/html/2412.09262v1#S3.SS3" target="_blank" rel="noopener noreferrer">LatentSync의 SyncNet 학습 ↗</a></p></article>
+      <article class="numbered"><p class="eyebrow">Our research question</p><h3>한국어 정합 판별을 개선할 수 있을까?</h3><p>AIHub의 한국어 음성과 입 모양을 이용해 Full fine-tuning과 LoRA 적응을 비교합니다. 원본 중심을 고정하고 분리된 평가 창에서 시간차 입력에 대한 점수를 확인합니다.</p><p>랜덤 오프셋 승률과 고정 오프셋 비교를 함께 제시하며, 제한된 화자 표본에서의 결과를 일반적인 성능 우위와 구분합니다.</p></article>
+    </div>
+    <div class="section-note" id="dataset-strategy">
+      <h3>한국어 학습·평가 데이터와 별도 시연 자료</h3>
+      <p>이번 학습·평가는 AIHub 한국어 발화 데이터로 진행했습니다. Hugging Face 애니메이션 자료는 생성 모델 시연과 추후 연구용 공개 예시입니다.</p>
+      <div class="two-column section-note">
+        <article class="numbered" id="dataset-animation"><p class="eyebrow">Visual domain / Animation</p><h3>Hugging Face · 캐릭터 영상</h3><span class="badge">시연·추후 연구용 예시</span><p><a href="https://huggingface.co/datasets/neosapience/TA2.0_animation_dataset" target="_blank" rel="noopener noreferrer">TA2.0 Animation Dataset ↗</a>은 별도 생성 모델의 시연 자료와 추후 연구용 공개 예시로 제공합니다.</p><p>애니메이션 데이터로 KoNet을 학습하거나 평가한 결과는 이번 연구에 포함되지 않습니다.</p></article>
+        <article class="numbered" id="dataset-korean"><p class="eyebrow">Language domain / Korean</p><h3>AIHub · 한국어 발화</h3><span class="badge">한국어 감독 적응 · 활용 중</span><p><a href="https://www.aihub.or.kr/aihubdata/data/view.do?aihubDataSe=&amp;currMenu=115&amp;dataSetSn=538&amp;topMenu=100" target="_blank" rel="noopener noreferrer">AIHub 538 립리딩 데이터 ↗</a>의 실제 한국어 음성·입 모양을 활용합니다. 현재 KoNet의 40,000쌍 학습을 바탕으로 추가 한국어 적응·평가에 활용할 계획입니다.</p><p>한국어 발화의 개폐·시작·종료 타이밍과 작은 시간차를 구별하는 감독 신호를 학습합니다. 이 실사 한국어 데이터는 애니메이션 시각 적응을 보완하는 언어 데이터 축입니다.</p></article>
+      </div>
+      <p class="note section-note"><strong>이번 실험의 데이터 범위:</strong> 한국어 판별 모델의 학습·평가에는 AIHub를 사용했습니다. 애니메이션 영상은 별도 시연·추후 연구용 예시입니다.</p>
+    </div>
+<div class="section-note" id="evaluation-dataset"><h3>Evaluation dataset · 실제 점수 수준 평가 데이터</h3><p class="section-note">완료된 held-out 실행에서 공통지원 B-window의 실제 cosine 점수를 비식별화해 제공합니다. 96개 창 × 3개 모델 = 288행이며, 각 행은 중심 점수와 6개 거리의 음·양 점수를 담습니다. 기록·화자 그룹을 보존하여 본 리더보드의 집계 규칙을 재계산할 수 있습니다.</p><div class="two-column section-note"><article class="numbered"><p class="eyebrow">Download &amp; evaluate</p><h3>점수 데이터와 재계산 코드</h3><p><a href="https://p030610.github.io/konet/reproducibility-20261029/datasets/heldout_scores.csv">실제 held-out score dataset CSV ↓</a><br><a href="https://p030610.github.io/konet/reproducibility-20261029/datasets/heldout_scores_datacard.md">데이터 구성·집계 단위·접근 안내 ↗</a><br><a href="https://p030610.github.io/konet/reproducibility-20261029/datasets/recompute_heldout_scores.py">CPU 지표 재계산 코드 ↗</a></p></article><article class="numbered"><p class="eyebrow">Two evaluation levels</p><h3>집계 재현과 모델 추론 재평가</h3><p>공개 점수 데이터로 strict both-win과 margin의 집계를 재현합니다. 새 모델의 점수를 얻는 AV 추론 재평가는 AIHub 원본을 공식 경로로 확보하고 baseline·평가 코드와 모델 가중치를 준비하여 수행합니다.</p><p class="small muted">점수 데이터는 실제 평가의 중간 산출물입니다. 영상·음성 입력 및 합성 코드 검증 fixture와 구분됩니다.</p></article></div></div>
+<div class="note section-note" id="public-animation-eval"><p class="eyebrow">Public demonstration samples / 별도 공개 예시</p><h3>공개 애니메이션 예시 영상 4개</h3><p class="section-note">TA2.0 Animation Dataset의 한국어 발화 영상 4개를 시연·추후 연구용 공개 예시로 제공합니다. 원본 MP4, manifest, 출처와 Apache 2.0 라이선스를 함께 담았습니다. 이번 KoNet 학습·평가에는 사용하지 않았으며, 한국어 44기록 결과의 입력 데이터도 아닙니다.</p><p class="section-note"><a href="https://p030610.github.io/konet/reproducibility-20261029/public_animation_eval/public_animation_eval.zip">영상 4개·manifest·라이선스 ZIP ↓</a> · <a href="https://p030610.github.io/konet/reproducibility-20261029/public_animation_eval/README.md">데이터 카드 ↗</a> · <a href="https://p030610.github.io/konet/reproducibility-20261029/public_animation_eval/manifest.json">Manifest JSON ↗</a> · <a href="https://huggingface.co/datasets/neosapience/TA2.0_animation_dataset">공식 원본 ↗</a></p></div>
+    <p class="note warning section-note"><strong>연구 가설과 성과를 구분합니다.</strong> 도메인 적응의 효과는 실사·애니메이션과 언어별 평가로 확인할 대상입니다. 공개 자료의 한국어 명시 부재와 한국어 학습 데이터의 완전한 부재도 구분합니다.</p>
+  </div></section>
+
+  <section class="section talk-section" id="baseline" aria-labelledby="baseline-title"><div class="container"><div class="section-heading talk-heading"><div><p class="eyebrow">03 / Compared models</p><h2 id="baseline-title">같은 입력에서 세 모델을 비교합니다.</h2><p>Original StableSyncNet · KoNet Full · KoNet LoRA</p></div></div><div class="claim-strip"><div><strong>Original StableSyncNet</strong><p>한국어 추가 학습 전 원본 checkpoint.</p></div><div><strong>KoNet Full · epoch 9</strong><p>한국어 전체 파인튜닝 checkpoint.</p></div><div><strong>KoNet LoRA · epoch 5</strong><p>rank 8 · alpha 16 attention adapter.</p></div></div><p class="small muted section-note">동일한 원본 A-fold 중심과 B-window에서 랜덤 오프셋 점수 승률 및 고정 오프셋 비교를 수행합니다.</p></div></section>
+
+  <section class="section talk-section" id="evaluation" aria-labelledby="evaluation-title"><div class="container">
+    <div class="section-heading talk-heading"><div><p class="eyebrow">04 / What the metrics mean</p><h2 id="evaluation-title">랜덤 오프셋과 고정 오프셋을 나누어 봅니다.</h2><p>↑ 높을수록 좋음 · ↓ 낮을수록 좋음</p></div></div>
+    <div class="metric-grid"><article class="metric-item"><p class="eyebrow">Random offset</p><h3>정합 점수 승률 ↑</h3><p>고정 중심과 시간 이동 후보 하나의 점수를 비교합니다. 동점은 0.5승이며, 12개 후보의 균등 기대값과 동일 seed의 고정 추출을 함께 보고합니다.</p><p class="formula mono">rank win = mean(win(s₀, sδ))</p></article><article class="metric-item"><p class="eyebrow">Fixed offset</p><h3>Strict both-win ↑</h3><p>지정 거리의 음·양 방향 점수를 중심이 모두 이겨야 성공입니다. 동점은 실패로 처리합니다.</p><p class="formula mono">(s₀ &gt; s₋ + ε) AND (s₀ &gt; s₊ + ε)</p></article><article class="metric-item"><p class="eyebrow">Score margin</p><h3>점수 차이 ↑</h3><p>랜덤 비교는 중심−후보의 평균, 고정 비교는 중심−max(음·양 후보)의 평균을 봅니다. 승률과 점수 차이를 함께 해석합니다.</p><p class="formula mono">ε = 1e−6</p></article></div>
+    <details class="section-note"><summary>집계와 해석</summary><div class="stack"><p class="small muted">window → 녹화 → 화자 순서로 평균하며 화자는 동일가중합니다. 이 지표는 점수 순서의 비교입니다. 실제 동기화 정답과 생성 품질은 독립적인 검증 대상입니다.</p></div></details>
+
+<div class="section-note" id="heldout-protocol"><h3>Held-out 평가 · strict both-win</h3><div class="two-column section-note"><article class="metric-item"><p class="eyebrow">Frozen center / matched inputs</p><h3>A-fold 선택 → B-fold 평가</h3><p>원본 A-fold 평균 cosine 점수로 선택한 중심을 고정하고 모든 모델에 같은 B-window를 사용합니다. 원본과 두 적응 모델 모두 같은 1280×720 정규화 입력 정책을 적용했습니다.</p><p>48개 held-out 기록 중 44개가 valid 중심이며 4개 boundary 기록은 제외했습니다. 4명 화자·96개 B-window가 보존된 전체 후보에서 공통지원됩니다.</p></article><article class="metric-item"><p class="eyebrow">Strict paired score comparison</p><h3>양쪽 시간차를 모두 이겨야 성공</h3><p class="formula mono">win = (s₀ &gt; s₋ + 1e−6) AND (s₀ &gt; s₊ + 1e−6)<br>margin = s₀ − max(s₋, s₊)</p><p>동점은 실패입니다. 유효한 3점 triplet을 창 → 기록 → 화자 순서로 평균하여 화자를 동일가중 집계합니다. </p></article></div></div>  </div></section>
+
+  <section class="section talk-section" id="architecture" aria-labelledby="architecture-title"><div class="container">
+    <div class="section-heading talk-heading"><div><p class="eyebrow">05 / StableSyncNet architecture</p><h2 id="architecture-title">입과 소리에서, 하나의 동기화 점수로.</h2><p>두 encoder가 각각 특징을 만들고, 마지막에 얼마나 닮았는지 비교합니다.</p></div></div>
+    <figure class="wide-figure sync-figure" aria-labelledby="sync-figure-title">
+      <div class="figure-top"><strong id="sync-figure-title">StableSyncNet → KoNet</strong><span class="small muted">입력 2개 · encoder 2개 · 동기화 점수 1개</span></div>
+      <div class="sync-legend"><span><i class="visual-key" aria-hidden="true"></i> 영상 경로</span><span><i class="audio-key" aria-hidden="true"></i> 음성 경로</span><span class="badge">원본 가중치 고정 + LoRA 학습</span></div>
+      <div class="sync-diagram">
+        <div class="sync-lane visual-lane" aria-label="영상 입력에서 영상 벡터까지">
+          <div class="sync-input"><span class="eyebrow">01 · Video input</span><h3>입 모양 16프레임</h3><svg class="frame-stack" viewBox="0 0 200 74" aria-hidden="true"><g fill="var(--panel)" stroke="currentColor"><rect x="3" y="12" width="72" height="58" rx="8"></rect><rect x="54" y="7" width="72" height="58" rx="8"></rect><rect x="105" y="2" width="72" height="58" rx="8"></rect></g><g fill="none" stroke="currentColor" stroke-width="2"><path d="M17 47q22 9 44 0M68 40q22-15 44 0q-22 16-44 0M119 34q22-26 44 0q-22 27-44 0"></path></g><text x="183" y="62" fill="currentColor" font-size="18">…</text></svg><p>25fps의 하관 RGB<br>같은 시간의 16장을 쌓기</p><code>48 × 128 × 256</code><span class="small muted">48 = 16 frames × 3 RGB</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="sync-encoder"><span class="eyebrow">02 · Visual encoder</span><h3>입 움직임을 특징으로</h3><div class="encoder-stages"><span>2D ResNet<br>특징 추출</span><span>Downsample<br>공간 축소</span><span class="attention-stage">Self-attention<br>특징 관계</span></div><span class="lora-tag">KoNet: attention의 Q / K / V / out에 LoRA</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="sync-vector"><span class="eyebrow">03 · Embedding</span><strong>v</strong><div class="vector-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><p>2048차원<br>L2 정규화</p></div>
+        </div>
+        <div class="sync-lane audio-lane" aria-label="음성 입력에서 음성 벡터까지">
+          <div class="sync-input"><span class="eyebrow">01 · Audio input</span><h3>같은 구간의 음성</h3><svg class="mel-drawing" viewBox="0 0 200 74" aria-hidden="true"><defs><pattern id="mel-cells" width="19" height="12" patternUnits="userSpaceOnUse"><rect width="15" height="8" rx="2" fill="currentColor" opacity=".3"></rect></pattern></defs><rect x="2" y="2" width="196" height="68" fill="url(#mel-cells)"></rect><g fill="currentColor"><path d="M23 6h15v54H23zM80 18h15v42H80zM137 6h15v30h-15z" opacity=".5"></path><path d="M42 30h15v18H42zM99 6h15v42H99zM156 42h15v18h-15z" opacity=".8"></path></g></svg><p>16kHz → mel spectrogram<br>음성을 시간·주파수 지도로</p><code>1 × 80 × 52</code><span class="small muted">채널 × mel bins × time steps</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="sync-encoder"><span class="eyebrow">02 · Audio encoder</span><h3>소리를 특징으로</h3><div class="encoder-stages"><span>2D ResNet<br>특징 추출</span><span>Downsample<br>지도 축소</span><span class="attention-stage">Self-attention<br>특징 관계</span></div><span class="lora-tag">KoNet: attention의 Q / K / V / out에 LoRA</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="sync-vector"><span class="eyebrow">03 · Embedding</span><strong>a</strong><div class="vector-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><p>2048차원<br>L2 정규화</p></div>
+        </div>
+        <div class="sync-score"><span class="merge-arrow" aria-hidden="true">↘<br>↗</span><span class="eyebrow">04 · Compare</span><h3>두 벡터 비교</h3><p class="score-equation">s = v · a</p><strong>Cosine similarity</strong><p>같은 발화·시간 구간인지 점수로 판단합니다.</p><div class="score-targets"><span>정합 쌍 <b>y = 1</b></span><span>시간차 쌍 <b>y = 0</b></span></div><p class="small muted">학습: cosine-BCE<br>평가: 랜덤 승률 · 고정 시간차</p></div>
+      </div>
+      <figcaption class="figure-caption">읽는 순서: 입력 → 각자의 encoder → 2048-D 벡터 → cosine 점수. 두 경로는 독립적으로 특징을 만들고 마지막에 비교합니다. 프레임·mel·벡터 그림은 구조 설명용 도식입니다.</figcaption>
+    </figure>
+    <details class="architecture-details"><summary>논문 근거와 실제 layer 구성 보기</summary><div class="stack"><p>LatentSync 논문 §3.3의 SD 계열 encoder 설계와 실제 사용 중인 attention 설정을 기준으로 다시 그렸습니다. 논문은 attention 제거 실험도 다루지만, 여기서는 LoRA가 연결된 attention 포함 checkpoint의 구성을 표시합니다.</p><p class="small mono">Visual channels: 64 → 128 → 256 → 256 → 512* → 1024* → 2048 → 2048<br>Audio channels: 32 → 64 → 128 → 256* → 512* → 1024 → 2048<br>* self-attention 포함 stage · 각 stage에 residual/downsampling 구성</p><p>KoNet은 이 두 encoder의 attention projection 16곳에 rank-8 LoRA를 추가합니다. 원본 401,306,080개는 고정하고 147,456개 adapter 파라미터를 학습합니다. 2D encoder의 입력에서 16프레임은 RGB 채널 축으로 쌓이며, 3D convolution과는 구분됩니다.</p><p><a href="https://arxiv.org/html/2412.09262v1#S3.SS3" target="_blank" rel="noopener noreferrer">논문 §3.3 ↗</a> · <a href="https://github.com/bytedance/LatentSync/blob/main/configs/syncnet/syncnet_16_pixel_attn.yaml" target="_blank" rel="noopener noreferrer">실제 attention 설정 ↗</a> · <a href="https://github.com/bytedance/LatentSync/blob/main/latentsync/models/stable_syncnet.py" target="_blank" rel="noopener noreferrer">두 encoder·L2 정규화 코드 ↗</a></p></div></details>
+    <p class="note section-note"><strong>한국어 정합 판별 모델</strong> 위 두 인코더는 영상과 음성의 특징을 비교해 동기화 점수를 계산합니다. 이번 연구에서는 한국어 적응이 이 점수의 판별 능력에 미치는 영향을 평가합니다.</p>
+  </div></section>
+
+  <section class="section talk-section" id="method" aria-labelledby="method-title"><div class="container">
+    <div class="section-heading talk-heading"><div><p class="eyebrow">06 / Adaptation roadmap</p><h2 id="method-title">데이터로 도메인 차이를 줄입니다.</h2><p>한국어 paired input으로 적응한 뒤, 같은 held-out 입력에서 세 모델을 비교합니다.</p></div></div>
+    <div class="method-steps"><article class="method-step"><span class="step-index mono">01 / DATA</span><h3>한국어 paired input</h3><p>AIHub 538 기반 고정 40,000쌍을 사용합니다. 같은 구간의 정합 쌍과 시간차 비정합 쌍을 균형 구성하고, 별도 validation으로 성능을 확인합니다.</p></article><article class="method-step"><span class="step-index mono">02 / ADAPT</span><h3>두 encoder의 LoRA</h3><p>기존 401,306,080개 파라미터는 고정합니다. 양쪽 self-attention의 16개 Q/K/V/output projection에 rank 8·alpha 16 어댑터를 넣어 147,456개만 학습합니다.</p></article><article class="method-step"><span class="step-index mono">03 / COMPARE</span><h3>동일 입력, 고정 가중치</h3><p>원본과 학습 checkpoint를 같은 held-out 입력에서 비교합니다. 원본 A-fold에서 중심을 고정하고 별도 B-fold에서 랜덤 오프셋 승률과 고정 시간차를 확인합니다.</p></article></div>
+    <div class="facts"><span class="fact">LoRA · r8 / α16</span><span class="fact">Trainable · 147,456</span><span class="fact">원본 파라미터 대비 · 0.0367%</span><span class="fact">Effective batch · 128</span><span class="fact">40,000 pairs / epoch</span></div>
+    
+    
+    <p class="note section-note"><strong>다음 검증 목표:</strong> 한국어 평가 화자와 창을 확대하고, 원본 시간 오프셋과 독립적인 정합 정답을 확인해 판별 성능을 검증합니다.</p>
+    <details class="section-note"><summary>발표 후 질문용: 실험 범위와 다음 검증</summary><div class="stack"><p class="small muted">학습 초기 10epoch LR 1e-4, 이후 LR 2e-5. 원본 base를 고정하고 attention 어댑터만 학습한 LoRA 실험입니다. 이전 full fine-tuning 실험과 설정·학습 이력이 달라 단일 요인 ablation으로 해석할 수 없습니다.</p><p class="small muted">검증 화자 4명은 작은 평가 집합입니다. 정밀 offset·화자별 변동과 독립적인 실제 timing 정답을 확대 검증할 계획입니다.</p></div></details>
+  </div></section>
+
+  <section class="section" id="leaderboard" aria-labelledby="leaderboard-title"><div class="container">
+<div class="section-heading"><p class="eyebrow">07 / Completed held-out comparison</p><h2 id="leaderboard-title">Korean Sync Leaderboard</h2><p>Original · Full fine-tuning · LoRA / 한국어 공통지원 코호트</p></div>
+<div class="board-top"><div class="segmented" role="group" aria-label="평가 시간차"><button type="button" aria-pressed="false" data-distance="40">±40ms</button><button type="button" aria-pressed="true" data-distance="120">±120ms</button><button type="button" aria-pressed="false" data-distance="160">±160ms</button><button type="button" aria-pressed="false" data-distance="240">±240ms</button><button type="button" aria-pressed="false" data-distance="320">±320ms</button></div><label class="select-wrap" for="model-filter">표시<select id="model-filter"><option value="all">전체 모델</option><option value="ours">KoNet</option><option value="baseline">공개 기준 모델</option></select></label></div>
+<div class="table-wrap" role="region" aria-label="held-out 동기화 점수 비교, 좁은 화면에서 가로 스크롤" tabindex="0"><table id="results-table"><caption id="board-caption">44 records / 4 speakers / 96 B-windows · 120ms strict both-win</caption><thead><tr><th scope="col">관측 순서</th><th scope="col">모델</th><th scope="col" class="numeric" id="primary-column">Both-win120 ↑</th><th scope="col" class="numeric">Δ vs. Original</th><th scope="col" class="numeric">Min margin ↑</th></tr></thead><tbody id="leaderboard-rows"><tr class="our-row"><td>1</td><th scope="row">KoNet LoRA r8 a16 epoch 5</th><td class="numeric">25.93%</td><td class="numeric">4.56 pp</td><td class="numeric">-0.0868</td></tr><tr class="our-row"><td>2</td><th scope="row">KoNet Full epoch 9</th><td class="numeric">22.52%</td><td class="numeric">1.15 pp</td><td class="numeric">-0.1132</td></tr><tr><td>3</td><th scope="row">Original StableSyncNet</th><td class="numeric">21.37%</td><td class="numeric">—</td><td class="numeric">-0.0809</td></tr></tbody></table></div>
+<div class="board-note"><p id="board-status" role="status" aria-live="polite">완료된 paired common-support 비교 · 3개 모델</p><button type="button" class="action" id="download-results">현재 표 CSV ↓</button><button type="button" class="action" id="download-metrics">전체 지표 JSON ↓</button></div>
+<p class="small muted">좁은 화면에서 표를 좌우로 스크롤할 수 있습니다. pp는 퍼센트포인트입니다. min margin은 중심 − max(음·양 시간차 점수)의 평균입니다.</p>
+<div class="note section-note" id="claim-status"><strong>고정 시간차에 따라 관측 순서가 달라집니다.</strong><p>120ms에서는 LoRA 25.93%, Full 22.52%, Original 21.37%입니다. 거리 전반의 일관된 우위와 독립적인 실제 동기화 정확도는 추가 검증 대상입니다.</p></div>
+<details class="section-note" open=""><summary>고정 시간차 5개 비교</summary><div class="table-wrap compact-table" role="region" aria-label="고정 시간차 strict both-win 표" tabindex="0"><table><caption>동일 44기록·4화자·96창 · strict both-win (%) ↑</caption><thead><tr><th scope="col">거리</th><th scope="col" class="numeric">Original</th><th scope="col" class="numeric">Full ep9</th><th scope="col" class="numeric">LoRA ep5</th></tr></thead><tbody><tr><th scope="row">40ms</th><td class="numeric">19.10%</td><td class="numeric">12.90%</td><td class="numeric">16.79%</td></tr><tr><th scope="row">120ms</th><td class="numeric">21.37%</td><td class="numeric">22.52%</td><td class="numeric">25.93%</td></tr><tr><th scope="row">160ms</th><td class="numeric">24.21%</td><td class="numeric">23.92%</td><td class="numeric">25.83%</td></tr><tr><th scope="row">240ms</th><td class="numeric">26.24%</td><td class="numeric">27.72%</td><td class="numeric">26.10%</td></tr><tr><th scope="row">320ms</th><td class="numeric">32.38%</td><td class="numeric">23.16%</td><td class="numeric">26.72%</td></tr></tbody></table></div></details>
+<details class="section-note" open="" id="directional-results"><summary>보조 지표 · 방향별 승리 평균</summary><div class="stack"><p class="small muted">같은 held-out 44기록·4화자·96창에서 음·양 방향의 승리를 각각 평균합니다. 동점(1e−6 이내)은 0.5승입니다. 양쪽을 동시에 이겨야 하는 strict both-win과 다른 지표입니다.</p><div class="table-wrap" role="region" aria-label="held-out 방향별 승리 평균, 좁은 화면에서 가로 스크롤" tabindex="0"><table><caption>Directional win ↑ · ½ × [win(−d) + win(+d)] · 동일 원본 A-fold 중심</caption><thead><tr><th scope="col">거리</th><th scope="col" class="numeric">Original</th><th scope="col" class="numeric">Full ep9</th><th scope="col" class="numeric">LoRA ep5</th><th scope="col" class="numeric">LoRA − Original</th></tr></thead><tbody><tr><th scope="row">40ms</th><td class="numeric">48.28%</td><td class="numeric">45.61%</td><td class="numeric">48.75%</td><td class="numeric">+0.46 pp</td></tr><tr><th scope="row">120ms</th><td class="numeric">45.21%</td><td class="numeric">47.23%</td><td class="numeric">50.88%</td><td class="numeric">+5.67 pp</td></tr><tr><th scope="row">160ms</th><td class="numeric">43.23%</td><td class="numeric">46.28%</td><td class="numeric">50.18%</td><td class="numeric">+6.95 pp</td></tr><tr><th scope="row">240ms</th><td class="numeric">44.61%</td><td class="numeric">43.54%</td><td class="numeric">45.24%</td><td class="numeric">+0.63 pp</td></tr><tr><th scope="row">320ms</th><td class="numeric">44.41%</td><td class="numeric">38.34%</td><td class="numeric">40.31%</td><td class="numeric">-4.10 pp</td></tr></tbody></table></div><p class="small muted">모든 거리를 함께 공개한 보조 비교입니다. LoRA는 일부 거리에서 높고 320ms에서는 원본보다 낮았습니다. 차이는 반올림 전 집계값으로 계산했습니다.</p></div></details>
+<div class="section-note" id="random-offset-results"><h3>랜덤 오프셋 · 정합 점수 승률</h3><p class="section-note">같은 B-window에서 원본 A-fold가 선택한 고정 중심 점수를 시간 이동 후보 한 개의 점수와 비교합니다. 후보는 40–320ms 범위의 양방향 12개이며, 점수 차이 1e−6 이내 동점은 0.5승입니다. 창 → 기록 → 화자 순서로 평균합니다.</p><p class="small muted section-note">12개 후보를 같은 확률로 뽑는 경우의 기대값을 전부 계산한 결과와, seed 1701로 창마다 하나씩 뽑은 결과를 함께 제공합니다. 세 모델에 동일한 96개 추출을 적용했습니다. 정합 점수 승률은 두 점수의 순위 비교이며 이진 동기화 정확도와 구분됩니다.</p><div class="table-wrap section-note" role="region" aria-label="세 모델의 랜덤 오프셋 점수 승률 비교" tabindex="0"><table><caption>동일 96창 / 44기록 / 4화자 · 정합 점수 승률 ↑ · 50%는 무작위 순위 선택의 참고 수준</caption><thead><tr><th scope="col">방법</th><th scope="col" class="numeric">12후보 기대값</th><th scope="col" class="numeric">Δ vs. Original</th><th scope="col" class="numeric">고정 추출 · 1701</th><th scope="col" class="numeric">평균 점수 차이 ↑</th></tr></thead><tbody><tr><th scope="row">Original StableSyncNet</th><td class="numeric">45.67%</td><td class="numeric">0.00 pp</td><td class="numeric">49.32%</td><td class="numeric">-0.0016</td></tr><tr><th scope="row">KoNet Full epoch 9</th><td class="numeric">44.59%</td><td class="numeric">-1.08 pp</td><td class="numeric">40.98%</td><td class="numeric">-0.0199</td></tr><tr><th scope="row">KoNet LoRA epoch 5</th><td class="numeric">47.07%</td><td class="numeric">+1.39 pp</td><td class="numeric">47.76%</td><td class="numeric">-0.0062</td></tr></tbody></table></div><p class="note section-note"><strong>결과는 혼합적입니다.</strong> 12후보 기대값에서 LoRA는 47.07%로 원본 45.67%보다 +1.39 pp 높았지만, 평균 점수 차이는 더 낮았습니다. 고정 추출에서는 원본 49.32%, LoRA 47.76%로 순서가 바뀌었습니다. 고정 오프셋 비교 결과와 함께 해석합니다.</p><p class="small muted section-note">한 번의 추출은 seed에 따라 달라질 수 있어 12후보 기대값을 주 비교로 둡니다. 4명 화자에 한정된 조건부 탐색 비교이며 독립적인 동기화 정답이나 통계적 유의성을 입증하는 결과는 아닙니다. <a href="https://p030610.github.io/konet/data/random-offset-20261029.json">근거리·원거리·고정 추출 상세 JSON ↗</a></p></div>
+<details class="section-note"><summary>평가 분모·제외 기준·집계 출처</summary><div class="stack"><p>Held-out 화자: C282, C371, C580, C613. 48개 기록에는 104개 B-window가 선언되어 있으며, 유효 중심 44개 기록의 96개 창을 사용했습니다. 여섯 거리 모두 같은 공통지원 코호트입니다.</p><p class="small muted">Boundary 제외: <code>TS101:C371:K:3:M:02:011:A</code>, <code>TS101:C580:K:3:M:02:001:A</code>, <code>TS10:C282:J:1:F:03:003:A</code>, <code>TS10:C282:J:1:F:03:009:A</code>.</p><p class="small muted">출처: 완료된 fresh-v1 reports/combined의 paired_common_support 행. 원본의 별도 전체 진단 276기록·23화자와는 분모가 다릅니다. 내려받는 JSON은 반올림된 표 집계값과 모든 margin을 포함합니다.</p></div></details>
+<p class="small muted section-note"><strong>해석 범위.</strong> 4명 화자의 조건부 점수 비교이며 중심은 원본 모델이 선택했습니다. 독립적인 물리적 동기화 정답, 언어 간 우열과 생성 품질은 후속 검증 대상입니다. 다중 데이터셋 전체 벤치마크(canonical-v2)는 진행 중입니다.</p>
+<script type="application/json" id="heldout-data">{"schema":"konet-course-summary-v1","status":"completed_heldout_score_comparison","source":"completed Korean fresh-v1 reports/combined paired_common_support rows","values":"rounded presentation aggregates, not raw observations","cohort":{"intended_records":48,"valid_records":44,"boundary_excluded_records":4,"speakers":4,"b_windows":96,"speaker_ids":["C282","C371","C580","C613"]},"protocol":{"center":"original A-fold selected, frozen for all models on B-fold","strict_both_win":"center > negative + 1e-6 AND center > positive + 1e-6; ties fail","margin":"center - max(negative, positive)","aggregation":"window to recording to equally weighted speaker","conditional":true,"physical_ground_truth":false},"distance_ms":[40,120,160,240,320],"models":[{"name":"Original StableSyncNet","strict_both_win_pct":[19.1,21.37,24.21,26.24,32.38],"mean_min_margin":[-0.05,-0.0809,-0.0913,-0.1246,-0.1277],"id":"stablesyncnet","family":"baseline"},{"name":"KoNet Full epoch 9","strict_both_win_pct":[12.9,22.52,23.92,27.72,23.16],"mean_min_margin":[-0.0558,-0.1132,-0.1173,-0.1571,-0.2066],"id":"konet-full","family":"ours"},{"name":"KoNet LoRA r8 a16 epoch 5","strict_both_win_pct":[16.79,25.93,25.83,26.1,26.72],"mean_min_margin":[-0.059,-0.0868,-0.099,-0.1535,-0.1515],"id":"konet-lora","family":"ours"}],"canonical_v2_full_benchmark":"incomplete; no result claim","secondary_directional":{"label":"Held-out directional mean; ties within epsilon 1e-6 receive 0.5","distance_ms":[40,120,160,240,320],"models":{"konet_full_epoch9":[0.4561079545454546,0.47234848484848485,0.4627840909090909,0.4353693181818182,0.3834280303030303],"konet_lora_r8a16_epoch5":[0.4874526515151515,0.5088068181818182,0.5018465909090909,0.4523674242424242,0.403125],"original":[0.4828125,0.45213068181818183,0.4323390151515151,0.4460700757575758,0.4440814393939394]}}}</script>
+</div></section>
+
+  <section class="section" id="examples" aria-labelledby="examples-title"><div class="container">
+    <div class="section-heading"><p class="eyebrow">07 / Conceptual examples</p><h2 id="examples-title">시간차가 만드는 대응의 변화</h2><p>오디오를 옮기면, 같은 시각의 영상과 다른 구간이 대응합니다.</p></div>
+    <div class="wide-figure"><div class="figure-top"><span>Alignment playground</span><span class="badge">개념도 · 실제 추론 아님</span></div><div class="figure-body"><svg id="alignment-demo" viewBox="0 0 1000 250" role="img" aria-labelledby="demo-svg-title demo-svg-desc"><title id="demo-svg-title">영상·음성 타임라인 정렬 개념도</title><desc id="demo-svg-desc">위쪽은 입 모양을 표현한 도식 여섯 개, 아래쪽은 오디오 파형입니다. 슬라이더는 아래 파형을 좌우로 이동합니다.</desc><defs><clipPath id="timeline-clip"><rect x="150" y="20" width="810" height="210" rx="8"></rect></clipPath></defs><text x="0" y="79" fill="var(--muted)" font-size="18">Visual</text><text x="0" y="191" fill="var(--muted)" font-size="18">Audio</text><g fill="var(--panel)" stroke="var(--border)"><rect x="160" y="28" width="110" height="85" rx="8"></rect><rect x="295" y="28" width="110" height="85" rx="8"></rect><rect x="430" y="28" width="110" height="85" rx="8"></rect><rect x="565" y="28" width="110" height="85" rx="8"></rect><rect x="700" y="28" width="110" height="85" rx="8"></rect><rect x="835" y="28" width="110" height="85" rx="8"></rect></g><g stroke="var(--visual)" stroke-width="3" fill="none"><path d="M183 71q32 18 64 0M318 68q32-15 64 0q-32 22-64 0M453 70q32-27 64 0q-32 28-64 0M588 68q32-15 64 0q-32 22-64 0M723 71q32 18 64 0M858 71q32 12 64 0"></path></g><path d="M150 176H960" stroke="var(--border)"></path><g clip-path="url(#timeline-clip)"><g id="audio-track" stroke="var(--accent)" stroke-width="3" fill="none"><path d="M150 176h20l5-4 6 9 7-15 7 20 8-10h15l6-8 7 19 7-31 7 38 7-18h15l7-30 7 54 7-43 7 35 7-16h16l7-40 7 70 7-92 7 112 7-78 7 48 7-20h15l7-20 7 35 7-60 7 85 7-54 7 25 7-11h15l7-7 7 17 7-27 7 20 7-3h15l7-10 7 19 7-43 7 63 7-42 7 24 7-11h15l7-28 7 53 7-74 7 95 7-71 7 41 7-16h15l7-24 7 35 7-50 7 63 7-35 7 15 7-4h15l7-7 7 12 7-18 7 23 7-15 7 5h32"></path></g></g><path d="M550 10v220" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 6"></path><text x="550" y="248" fill="var(--muted)" text-anchor="middle" font-size="14">같은 시각 / same timestamp</text></svg>
+    <div class="demo-controls"><div class="range-group"><div class="range-label"><label for="audio-offset">오디오 오프셋</label><output id="offset-output" for="audio-offset" class="mono">0 ms</output></div><input id="audio-offset" type="range" min="-200" max="200" step="40" value="0" aria-describedby="demo-help"><div class="range-ticks"><span>−200 ms · 왼쪽</span><span>0</span><span>+200 ms · 오른쪽</span></div></div><button class="action" type="button" id="reset-offset">정렬 초기화</button></div><p class="demo-status" id="demo-status" role="status">0ms · 두 타임라인이 같은 기준 시각에 놓여 있습니다.</p></div><p class="figure-caption" id="demo-help">시간차를 설명하는 개념도입니다. 위 감독 점수 예시와 함께 정합·시간 이동의 관계를 살펴볼 수 있습니다.</p></div>
+  </div></section>
+
+  <section class="section" id="resources" aria-labelledby="resources-title"><div class="container">
+    <div class="section-heading"><p class="eyebrow">Appendix / Code &amp; references</p><h2 id="resources-title">재현 가능성이 결과의 일부입니다.</h2><p>원저자의 구현, 데이터 출처, 그리고 프로젝트 코드.</p></div>
+    <div class="resources"><a class="resource" href="https://github.com/p030610/konet" target="_blank" rel="noopener noreferrer"><span class="eyebrow">Project repository</span><strong>KoNet GitHub ↗</strong><p>KoNet baseline adapter, 평가 코드, 데이터 접근 안내와 결과 보고서.</p></a><a class="resource" href="https://github.com/bytedance/LatentSync" target="_blank" rel="noopener noreferrer"><span class="eyebrow">Baseline implementation</span><strong>LatentSync / StableSyncNet ↗</strong><p>KoNet이 출발하는 사전 학습 모델과 원본 구현.</p></a><a class="resource" href="https://www.aihub.or.kr/aihubdata/data/view.do?aihubDataSe=&amp;currMenu=115&amp;dataSetSn=538&amp;topMenu=100" target="_blank" rel="noopener noreferrer"><span class="eyebrow">Korean language data</span><strong>AIHub Dataset 538 ↗</strong><p>한국어 음성·입 모양의 학습과 평가 데이터. 공식 이용 조건을 확인하고 신청·승인을 거쳐 확보합니다.</p></a><a class="resource" href="https://huggingface.co/datasets/neosapience/TA2.0_animation_dataset" target="_blank" rel="noopener noreferrer"><span class="eyebrow">Animation domain data</span><strong>TA2.0 Animation Dataset ↗</strong><p>별도 생성 모델의 시연·추후 연구용 공개 예시. 이번 KoNet 학습·평가에는 사용하지 않았습니다.</p></a></div>
+    <p class="small muted section-note"><a href="https://p030610.github.io/konet/data/heldout-summary-20261029.json" target="_blank" rel="noopener noreferrer">Held-out 집계 JSON ↗</a> · <a href="https://p030610.github.io/konet/reproducibility-20261029/konet-reproducibility-20261029.zip">Baseline·평가 코드·집계 보고서 ZIP ↓</a> · <a href="https://p030610.github.io/konet/reproducibility-20261029/README.md">데이터 접근·재현 안내 ↗</a></p>
+    <p class="small muted section-note"><strong>재현 자료:</strong> <a href="https://github.com/p030610/konet/blob/main/reproducibility-20261029/scripts/eval_korean_offsets.py">Baseline·평가 CLI</a> · <a href="https://github.com/p030610/konet/tree/main/reproducibility-20261029/src/ko_offset_eval">평가 구현</a> · <a href="https://github.com/p030610/konet/blob/main/reproducibility-20261029/README.md">데이터 확보·실행 안내</a>. 실제 held-out score-level 평가 데이터와 CPU 재계산 코드를 함께 제공합니다. AV 추론 입력은 AIHub 공식 경로로 별도 확보합니다.</p><div class="reading stack" style="margin-top:var(--s12)"><h3>References</h3><ol class="reference-list"><li><a href="https://arxiv.org/abs/2412.09262" target="_blank" rel="noopener noreferrer">LatentSync: Audio Conditioned Latent Diffusion Models for Lip Sync</a> — 감독 모델의 기반 연구.</li><li><a href="https://github.com/Rudrabha/Wav2Lip" target="_blank" rel="noopener noreferrer">A Lip Sync Expert Is All You Need for Speech to Lip Generation In the Wild</a> — 추가 supervisor 비교 후보.</li><li><a href="https://github.com/joonson/syncnet_python" target="_blank" rel="noopener noreferrer">Out of Time: Automated Lip Sync in the Wild</a> — 원본 SyncNet 계열 기준 구현.</li></ol><p class="small muted">디자인 레퍼런스: <a href="https://ziqiaopeng.github.io/OmniSync/" target="_blank" rel="noopener noreferrer">OmniSync project page</a>. 발표 구성 레퍼런스: <a href="https://lsh-ajou.github.io/Speech-Recognition-Challenge-2026/submission/Team_sample_202624123.html#/method" target="_blank" rel="noopener noreferrer">Speech Recognition Challenge 2026 sample</a>.</p></div>
+  </div></section>
+</main>
+<footer class="footer"><div class="container footer-inner"><div><a class="wordmark" href="#top">Ko<span>Net</span></a><p>한국어 음성–입 모양 정합 판별 성능 개선 연구.</p></div><p>박성재 · 202020814 · 소프트웨어학과<br>Speech recognition course project · 2026</p></div></footer>
+
+
+<script>
+const summary = JSON.parse(document.querySelector('#heldout-data').textContent);
+const rowsElement = document.querySelector('#leaderboard-rows');
+const statusElement = document.querySelector('#board-status');
+const modelFilter = document.querySelector('#model-filter');
+const buttons = [...document.querySelectorAll('[data-distance]')];
+let distance = 120;
+let visibleRows = [];
+function cell(tag,text,className=''){const node=document.createElement(tag);node.textContent=text;node.className=className;return node;}
+function renderBoard(){
+ const i=summary.distance_ms.indexOf(distance);
+ const ranked=summary.models.map(model=>({...model,score:model.strict_both_win_pct[i],margin:model.mean_min_margin[i]})).sort((a,b)=>b.score-a.score);
+ visibleRows=ranked.map((model,index)=>({...model,rank:index+1})).filter(model=>modelFilter.value==='all'||model.family===modelFilter.value);
+ rowsElement.replaceChildren();
+ for(const row of visibleRows){const tr=document.createElement('tr');if(row.family==='ours')tr.className='our-row';const th=cell('th',row.name);th.scope='row';const delta=row.score-summary.models[0].strict_both_win_pct[i];tr.append(cell('td',String(row.rank)),th,cell('td',row.score.toFixed(2)+'%','numeric'),cell('td',row.id==='stablesyncnet'?'—':(delta>0?'+':'')+delta.toFixed(2)+' pp','numeric'),cell('td',row.margin.toFixed(4),'numeric'));rowsElement.append(tr);}
+ document.querySelector('#primary-column').textContent='Both-win'+distance+' ↑';
+ document.querySelector('#board-caption').textContent='44 records / 4 speakers / 96 B-windows · '+distance+'ms strict both-win';
+ statusElement.textContent='완료된 paired common-support 비교 · 표시 '+visibleRows.length+'개 모델';
+ for(const button of buttons)button.setAttribute('aria-pressed',String(Number(button.dataset.distance)===distance));
+}
+function download(text,type,name){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+buttons.forEach(button=>button.addEventListener('click',()=>{distance=Number(button.dataset.distance);renderBoard();}));
+modelFilter.addEventListener('change',renderBoard);
+document.querySelector('#download-results').addEventListener('click',()=>{const rows=[['distance_ms','rank','model','strict_both_win_percent','mean_min_margin','records','speakers','b_windows'],...visibleRows.map(r=>[distance,r.rank,r.name,r.score,r.margin,44,4,96])];download('\ufeff'+rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n'),'text/csv;charset=utf-8','konet-'+distance+'ms-heldout.csv');statusElement.textContent='현재 표의 집계 CSV를 저장했습니다.';});
+document.querySelector('#download-metrics').addEventListener('click',()=>{download(JSON.stringify(summary,null,2),'application/json;charset=utf-8','konet-heldout-summary-20261029.json');statusElement.textContent='전체 거리의 집계 JSON을 저장했습니다.';});
+renderBoard();
+
+const range = document.querySelector('#audio-offset');
+function updateOffset() {
+  const offset = Number(range.value);
+  document.querySelector('#offset-output').textContent = `${offset > 0 ? '+' : ''}${offset} ms`;
+  document.querySelector('#audio-track').style.transform = `translateX(${offset / 2}px)`;
+  document.querySelector('#demo-status').textContent = offset === 0 ? '0ms · 두 타임라인이 같은 기준 시각에 놓여 있습니다.'
+    : `${offset > 0 ? '+' : ''}${offset}ms · 파형을 ${offset > 0 ? '오른쪽' : '왼쪽'}으로 옮긴 개념도입니다.`;
+}
+range.addEventListener('input', updateOffset);
+document.querySelector('#reset-offset').addEventListener('click', () => { range.value = '0'; updateOffset(); });
+
+const navigation = [...document.querySelectorAll('.nav-links a')];
+const observer = new IntersectionObserver(entries => {
+  for (const entry of entries) if (entry.isIntersecting) {
+    for (const link of navigation) {
+      if (link.hash === `#${entry.target.id}`) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    }
+  }
+}, { rootMargin: '-15% 0px -55% 0px' });
+for (const link of navigation) { const section = document.querySelector(link.hash); if (section) observer.observe(section); }
+
+const publicMedia=[...document.querySelectorAll('video,audio')];publicMedia.forEach(player=>player.addEventListener('play',()=>{publicMedia.forEach(other=>{if(other!==player)other.pause();});}));
+
+﻿(() => {
+  const root = document.querySelector('[data-c293-local-root]');
+  if (!root) return;
+  const players = [root.querySelector('#c293-aligned'), root.querySelector('#c293-shifted')];
+  const expected = ['fc0de5ce8b98fb9b5f44ac50c4ff6dc8b1b5dd1128036511f2799fea4081744e', '148bf3e7d00bb991762e0333e4974945f020f88deebb9e5718fa83bba8118387'];
+  const scores = ['0.2321', '0.6257'];
+  const labels = ['정합 입력 · 0ms', '영상 시간 이동 · −640ms'];
+  const status = root.querySelector('#c293-status');
+  const sequenceButton = root.querySelector('#c293-play');
+  const objectUrls = [null, null];
+  const revisions = [0, 0];
+  let sequence = null;
+  let generation = 0;
+  function refresh() {
+    sequenceButton.disabled = players.some(player => !player.currentSrc || player.readyState < 1);
+    players.forEach((player, index) => {
+      root.querySelector(`[data-c293-empty="${index}"]`).hidden = Boolean(player.getAttribute('src'));
+      player.hidden = !player.getAttribute('src');
+      root.querySelector(`[data-c293-badge="${index}"]`).textContent = player.getAttribute('src') && player.dataset.verified !== 'true' ? '선택 영상 · 미측정' : `기록 cosine ${scores[index]}`;
+      root.querySelector(`[data-c293-score="${index}"]`).textContent = player.dataset.verified === 'true'
+        ? `기록 cosine ${scores[index]} · 원본 표시 파일 확인됨`
+        : player.getAttribute('src') ? '선택한 파일 · 점수 미측정 / 기록 점수 연결 미확인' : '기록 점수 적용 파일 · 선택 대기';
+    });
+  }
+  function stop(reset = false) {
+    generation += 1;
+    sequence = null;
+    players.forEach(player => { player.pause(); if (reset && player.readyState > 0) player.currentTime = 0; });
+    root.querySelectorAll('[data-c293-stage]').forEach(stage => stage.classList.remove('playing'));
+  }
+  async function playStage(index, token) {
+    if (token !== generation) return;
+    sequence = index;
+    players[index].currentTime = 0;
+    try { await players[index].play(); }
+    catch { if (token === generation) { stop(); status.textContent = '재생 버튼을 눌러 영상을 시작해 주세요.'; } }
+  }
+  players.forEach((player, index) => {
+    player.addEventListener('loadedmetadata', refresh);
+    player.addEventListener('play', () => {
+      if (sequence !== index) { generation += 1; sequence = null; }
+      document.querySelectorAll('video,audio').forEach(other => { if (other !== player) other.pause(); });
+      root.querySelectorAll('[data-c293-stage]').forEach((stage, i) => stage.classList.toggle('playing', i === index));
+      status.textContent = `${labels[index]} 재생 중 · ${player.dataset.verified === 'true' ? '원본 표시 파일 확인됨' : '선택한 파일은 점수 미측정'}`;
+    });
+    player.addEventListener('timeupdate', () => {
+      const inWindow = player.currentTime >= 1.28 && player.currentTime < 1.92;
+      root.querySelector('#c293-window').textContent = (inWindow && player.dataset.verified === 'true' ? '지금은 기록 점수의 측정 구간입니다. ' : '') + '기록 점수 구간: 재생 1.28–1.92초 · 16프레임 / 0.64초. ' + (players.every(item => item.dataset.verified === 'true') ? '두 원본 표시 파일은 같은 한국어 음성을 포함합니다.' : '현재 파일의 점수 연결 여부는 각 플레이어에서 확인할 수 있습니다.');
+    });
+    player.addEventListener('pause', () => {
+      root.querySelector(`[data-c293-stage="${index}"]`).classList.remove('playing');
+      if (!player.ended && player.currentTime > 0 && players.every(item => item.paused)) status.textContent = `${labels[index]} 일시정지`;
+    });
+    player.addEventListener('ended', () => {
+      root.querySelector(`[data-c293-stage="${index}"]`).classList.remove('playing');
+      if (sequence !== index) return;
+      if (index === 0) void playStage(1, generation);
+      else { sequence = null; status.textContent = '정합 → 시간 이동 비교 재생을 마쳤습니다.'; }
+    });
+    player.addEventListener('error', () => { stop(); status.textContent = '영상을 읽지 못했습니다. 해당 MP4 파일을 다시 선택해 주세요.'; });
+  });
+  document.querySelectorAll('video,audio').forEach(player => {
+    if (!players.includes(player)) player.addEventListener('play', () => stop());
+  });
+  root.querySelectorAll('[data-c293-pick]').forEach(input => input.addEventListener('change', async () => {
+    const index = Number(input.dataset.c293Pick);
+    const file = input.files?.[0];
+    if (!file) return;
+    stop(true);
+    const revision = ++revisions[index];
+    if (objectUrls[index]) URL.revokeObjectURL(objectUrls[index]);
+    objectUrls[index] = URL.createObjectURL(file);
+    players[index].dataset.verified = 'false';
+    players[index].src = objectUrls[index];
+    refresh();
+    status.textContent = `${labels[index]} 파일 연결 · 원본 표시 파일 확인 중`;
+    try {
+      const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
+      const hash = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+      if (revision !== revisions[index]) return;
+      players[index].dataset.verified = String(hash === expected[index]);
+      refresh();
+      status.textContent = hash === expected[index] ? `${labels[index]} · 원본 표시 파일이 확인됐습니다.` : `${labels[index]} · 다른 파일이므로 기록 점수와 연결하지 않습니다.`;
+    } catch { if (revision === revisions[index]) status.textContent = '로컬 재생 준비 완료 · 원본 파일 확인은 이 브라우저에서 지원되지 않습니다.'; }
+  }));
+  sequenceButton.addEventListener('click', () => { stop(true); void playStage(0, generation); });
+  root.querySelector('#c293-stop').addEventListener('click', () => { stop(true); status.textContent = '재생을 정지하고 처음으로 돌아왔습니다.'; });
+  window.addEventListener('pagehide', () => { stop(); objectUrls.forEach(url => { if (url) URL.revokeObjectURL(url); }); });
+  refresh();
+})();
+
+</script>
+</body></html>

@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cascade vs Direct · Team 14</title>
+<meta name="description" content="Speech Recognition Challenge 2026, 한국어 음성 명령 의도 인식: Cascade vs Direct">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ef; --paper:#fffdf8; --ink:#16161a; --ink-2:#4a4a52; --ink-3:#8a8a92;
+  --line:#e2ded4; --line-2:#cfc9bb;
+  --cas:#3b4cca; --cas-soft:#e7e9fb;   /* Cascade */
+  --dir:#e0562f; --dir-soft:#fce7df;   /* Direct  */
+  --ref:#6b6b73; --ok:#1f8a5b;
+  --radius:14px; --maxw:1080px;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --serif:"Instrument Serif",Georgia,serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#111114;--paper:#18181c;--ink:#f1efe9;--ink-2:#b9b7b0;--ink-3:#7d7b75;--line:#2a2a30;--line-2:#3a3a42;
+    --cas:#8b97ff;--cas-soft:#22264a;--dir:#ff8a63;--dir-soft:#3d2219;--ref:#9a9aa2;--ok:#4cc98f}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.72;
+  -webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:break-word}
+a{color:inherit}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+code,.mono{font-family:var(--mono);font-size:.88em}
+code{background:var(--line);padding:.1em .4em;border-radius:5px}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 86%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:12px;height:56px}
+.brand{font-weight:700;font-size:14px;letter-spacing:-.01em;white-space:nowrap;text-decoration:none}
+.brand span{color:var(--ink-3);font-weight:500}
+.nav ol{display:flex;gap:2px;list-style:none;margin:0 0 0 auto;padding:0;overflow-x:auto;scrollbar-width:none}
+.nav ol::-webkit-scrollbar{display:none}
+.nav a.tab{display:block;padding:6px 8px;border-radius:8px;font-size:13px;color:var(--ink-2);text-decoration:none;white-space:nowrap}
+.nav a.tab:hover,.nav a.tab.on{background:var(--paper);color:var(--ink)}
+.nav a.tab b{font-family:var(--mono);font-weight:400;color:var(--ink-3);margin-right:5px;font-size:11px}
+
+/* hero */
+.hero{padding:72px 0 40px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(48px,8vw,96px);line-height:.95;letter-spacing:-.02em;margin:18px 0 10px}
+h1 em{font-style:italic;color:var(--ink-3)}
+.sub{font-size:clamp(18px,2.2vw,22px);font-weight:600;letter-spacing:-.02em;margin:0 0 18px}
+.lede{max-width:640px;color:var(--ink-2);font-size:17px;margin:0}
+.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:36px 0 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper);overflow:hidden}
+.meta div{padding:14px 18px;border-right:1px solid var(--line)}
+.meta div:last-child{border-right:0}
+.meta dt{font-size:12px;color:var(--ink-3);margin:0}
+.meta dd{margin:2px 0 0;font-weight:600;font-size:15px}
+.cta{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;border:1px solid var(--line-2);background:var(--paper)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn:hover{transform:translateY(-1px)}
+
+/* hero diagram */
+.flow{margin:44px 0 0;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:22px 18px}
+.flow svg{width:100%;height:auto;display:block}
+.flow text{font-family:var(--sans)}
+.flow .lbl{font-size:13px;fill:var(--ink-2)}
+.flow .tag{font-family:var(--mono);font-size:11px;letter-spacing:.06em}
+.flow .box{fill:var(--paper);stroke:var(--line-2)}
+.flow .cas-box{fill:var(--cas-soft);stroke:var(--cas)}
+.flow .dir-box{fill:var(--dir-soft);stroke:var(--dir)}
+.flow .t{font-size:14px;font-weight:600;fill:var(--ink)}
+.flow .ar{stroke:var(--ink-3);stroke-width:1.5;fill:none;marker-end:url(#arw)}
+.flow .wave{stroke:var(--ink);stroke-width:2;fill:none;stroke-linecap:round}
+.cap{font-size:13px;color:var(--ink-3);margin:12px 4px 0}
+
+/* sections */
+section.s{padding:64px 0;border-top:1px solid var(--line)}
+.shead{display:grid;grid-template-columns:200px 1fr;gap:24px;margin-bottom:28px}
+.snum{font-family:var(--mono);font-size:12px;color:var(--ink-3);padding-top:10px}
+h2{font-size:clamp(26px,3.4vw,34px);letter-spacing:-.03em;line-height:1.2;margin:0}
+.sintro{color:var(--ink-2);margin:10px 0 0;max-width:680px}
+.body{margin-left:224px}
+h3{font-size:18px;letter-spacing:-.02em;margin:28px 0 8px}
+p{margin:0 0 14px}
+
+.grid{display:grid;gap:14px}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.card h4{margin:6px 0 6px;font-size:16px;letter-spacing:-.02em}
+.card p{font-size:14.5px;color:var(--ink-2);margin:0}
+.k{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-3);text-transform:uppercase}
+.card.cas{border-top:3px solid var(--cas)} .card.dir{border-top:3px solid var(--dir)} .card.ref{border-top:3px solid var(--ref)}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600;letter-spacing:.03em}
+.pill.cas{background:var(--cas-soft);color:var(--cas)} .pill.dir{background:var(--dir-soft);color:var(--dir)} .pill.ref{background:var(--line);color:var(--ref)}
+
+.rq{counter-reset:rq;list-style:none;padding:0;margin:20px 0 0;display:grid;gap:10px}
+.rq li{counter-increment:rq;display:grid;grid-template-columns:52px 1fr;align-items:start;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.rq li::before{content:"RQ" counter(rq);font-family:var(--mono);font-size:12px;color:var(--ink-3);padding-top:3px}
+.rq b{display:block;letter-spacing:-.01em}
+.rq span{color:var(--ink-2);font-size:14.5px}
+
+.tbl{width:100%;border-collapse:separate;border-spacing:0;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;font-size:14.5px}
+.tbl th,.tbl td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{font-size:12px;font-weight:600;color:var(--ink-3);background:color-mix(in srgb,var(--line) 35%,var(--paper));white-space:nowrap}
+.tbl td:first-child b{white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.num{font-family:var(--mono);text-align:right;white-space:nowrap}
+.tbl th.num{text-align:right}
+.tbl tr.hl td{background:color-mix(in srgb,var(--dir-soft) 45%,var(--paper))}
+.tscroll{overflow-x:auto;border-radius:var(--radius)}
+.note{font-size:13.5px;color:var(--ink-3);margin-top:10px}
+
+.io{display:grid;grid-template-columns:1fr 32px 1fr 32px 1fr;align-items:stretch;gap:6px;margin:18px 0}
+.io .card{padding:16px}
+.io .arrow{display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:20px}
+.example{font-family:var(--mono);font-size:13px;background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:10px;color:var(--ink)}
+
+.split{display:flex;height:42px;border-radius:10px;overflow:hidden;margin:10px 0 6px;font-family:var(--mono);font-size:12px;font-weight:600}
+.split div{display:flex;align-items:center;justify-content:center;color:#fff}
+.legend{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-3)}
+
+.lb-status{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-2);margin:0 0 12px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dir);box-shadow:0 0 0 4px var(--dir-soft)}
+.dot.done{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 20%,transparent)}
+.pending{font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+.rank{font-family:var(--mono);font-weight:600}
+
+.timeline{list-style:none;padding:0;margin:0;border-left:2px solid var(--line-2)}
+.timeline li{position:relative;padding:0 0 22px 22px}
+.timeline li::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--line-2)}
+.timeline li.now::before{background:var(--dir);border-color:var(--dir)}
+.timeline .when{font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+.timeline b{display:block;letter-spacing:-.01em}
+.timeline span{font-size:14.5px;color:var(--ink-2)}
+
+.links{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.links a{text-decoration:none;display:block}
+.links a:hover .card{border-color:var(--ink-3)}
+.refs{padding-left:20px;font-size:14.5px;color:var(--ink-2)}
+.refs li{margin-bottom:6px}
+footer{padding:40px 0 60px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-3)}
+
+@media (max-width:860px){
+  .shead{grid-template-columns:1fr;gap:6px}
+  .snum{padding-top:0}
+  .body{margin-left:0}
+  .g3,.links{grid-template-columns:1fr 1fr}
+  .meta{grid-template-columns:1fr 1fr}
+  .meta div:nth-child(2){border-right:0}
+  .meta div:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .io{grid-template-columns:1fr}
+  .io .arrow{transform:rotate(90deg);height:20px}
+}
+@media (max-width:560px){
+  .wrap{padding:0 16px}
+  .g3,.g2,.links{grid-template-columns:1fr}
+  .hero{padding-top:44px}
+  .brand span{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="섹션">
+  <div class="wrap">
+    <a class="brand" href="#overview">Cascade vs Direct <span>· Team 14</span></a>
+    <ol>
+      <li><a class="tab" href="#description"><b>01</b>Description</a></li>
+      <li><a class="tab" href="#pipeline"><b>02</b>Pipeline</a></li>
+      <li><a class="tab" href="#method"><b>03</b>Baseline &amp; Method</a></li>
+      <li><a class="tab" href="#dataset"><b>04</b>Dataset</a></li>
+      <li><a class="tab" href="#evaluation"><b>05</b>Evaluation</a></li>
+      <li><a class="tab" href="#leaderboard"><b>06</b>Leaderboard</a></li>
+      <li><a class="tab" href="#resources"><b>07</b>References</a></li>
+    </ol>
+  </div>
+</nav>
+
+<main id="main">
+<header class="hero" id="overview">
+  <div class="wrap">
+    <div class="eyebrow">Ajou University · Speech Recognition Challenge 2026</div>
+    <h1>Cascade <em>vs</em> Direct</h1>
+    <p class="sub">한국어 음성 명령 의도 인식에서 Cascade와 Direct 방식 비교</p>
+    <p class="lede">"내일 아침 7시에 알람 맞춰줘"라는 명령을 처리할 때 시스템에 필요한 것은 문장 전체가 아니라 의도(<code>alarm_set</code>)입니다. 본 챌린지는 한국어 스마트 스피커 명령 60종을 대상으로, 음성을 텍스트로 전사한 뒤 의도를 분류하는 <b style="color:var(--cas)">Cascade</b> 방식과 전사 없이 오디오에서 바로 분류하는 <b style="color:var(--dir)">Direct</b> 방식을 동일한 평가 조건에서 비교합니다.</p>
+
+    <dl class="meta">
+      <div><dt>Team</dt><dd>Team 14</dd></div>
+      <div><dt>Member</dt><dd>김민승 · 202020760</dd></div>
+      <div><dt>Primary metric</dt><dd>Intent Accuracy ↑</dd></div>
+      <div><dt>Task</dt><dd>60-way intent · ko-KR</dd></div>
+    </dl>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/gitminseung/cascade-vs-direct-slu" target="_blank" rel="noopener">Personal GitHub ↗</a>
+      <a class="btn" href="#leaderboard">Leaderboard</a>
+      <a class="btn" href="#pipeline">Pipeline</a>
+    </div>
+
+  </div>
+</header>
+
+<section class="s" id="description" aria-labelledby="h-description">
+  <div class="wrap">
+    <div class="shead"><div class="snum">01 / Challenge Description</div>
+      <div><h2 id="h-description">Challenge 개요</h2>
+      <p class="sintro">텍스트 전사는 회의록이나 검색처럼 기록이 필요한 작업에는 필수지만, 알람 설정이나 조명 제어처럼 정해진 선택지 중 하나를 고르는 작업에는 꼭 필요하지 않을 수 있습니다. 최근 발표된 Audio Decision Model(Jev 계열)과 Audio Action Model(Thud)은 전사를 생략해 속도를 크게 높였다고 보고했지만, 정확도와 확률 보정까지 같은 조건에서 비교한 결과는 아직 부족합니다. 본 챌린지는 다음 세 가지를 확인합니다.</p></div>
+    </div>
+    <div class="body">
+      <ol class="rq">
+        <li><div><b>정확도</b><span>전사 없이 분류하는 Direct 방식은 Cascade 방식과 비교해 한국어 명령에서 정확도가 얼마나 차이 나는가</span></div></li>
+        <li><div><b>속도</b><span>자기회귀 디코딩을 생략했을 때 같은 GPU에서 발화당 처리 시간은 얼마나 줄어드는가</span></div></li>
+        <li><div><b>신뢰도</b><span>각 방식이 출력한 확률이 실제 정답률과 얼마나 일치하는가 (ECE). 확률이 낮을 때 실행을 보류하는 정책에 쓸 수 있는 수준인가</span></div></li>
+      </ol>
+      <h3>관련 연구</h3>
+      <p>음성 의도 인식(Spoken Language Understanding, SLU)은 ASR과 텍스트 분류를 잇는 pipeline 방식과, 음성에서 바로 의도를 예측하는 end-to-end 방식으로 나뉘어 연구되어 왔습니다.</p>
+      <div class="grid g2">
+        <div class="card"><div class="k">Dataset</div><h4>SLURP → MASSIVE → Speech-MASSIVE</h4><p>영어 음성 명령 데이터셋 SLURP의 60개 intent 체계를 50여 개 언어 텍스트로 번역한 것이 MASSIVE이고, 이 중 한국어를 포함한 12개 언어를 실제 사람 목소리로 녹음한 것이 Speech-MASSIVE(Interspeech 2024)입니다.</p></div>
+      <div class="card"><div class="k">Cascade</div><h4>ASR + NLU pipeline</h4><p>Whisper 등 ASR 모델의 전사 결과를 텍스트 분류기에 입력하는 방식입니다. 텍스트 학습 데이터를 충분히 활용할 수 있지만, ASR 오류가 분류 단계로 전파되고 디코딩에 시간이 듭니다.</p></div>
+      <div class="card"><div class="k">Direct</div><h4>End-to-end SLU · SSL encoder</h4><p>wav2vec 2.0, HuBERT, Whisper 인코더 등 음성 표현 위에 분류 헤드를 학습하는 방식으로, SUPERB 벤치마크의 intent classification이 대표적입니다. 디코딩이 없어 빠르지만 의도가 라벨링된 음성 데이터가 필요합니다.</p></div>
+      <div class="card"><div class="k">Audio Decision</div><h4>Jev · Qwen-Audio-Jev · Thud (2026)</h4><p>전사 대신 선택형(Choice), 점수형(Score), 예/아니오형 결정을 오디오에서 직접 출력하는 모델들입니다. Qwen-Audio-Jev는 기존 모델 대비 약 20배 빠른 추론을 보고했으나, 확률 보정과 다른 방식과의 동일 조건 비교는 제한적입니다.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="pipeline" aria-labelledby="h-pipeline">
+  <div class="wrap">
+    <div class="shead"><div class="snum">02 / Pipeline</div>
+      <div><h2 id="h-pipeline">파이프라인</h2>
+      <p class="sintro">한국어 음성 명령 1개를 입력받아 60개 intent 중 하나와 클래스별 확률을 출력합니다. 시스템은 중간에 텍스트 전사를 거치는지에 따라 두 트랙으로 나뉩니다.</p></div>
+    </div>
+    <div class="body">
+      <figure class="flow" style="margin-top:0" aria-label="Cascade와 Direct 파이프라인 비교">
+      <svg viewBox="0 0 960 250" role="img">
+        <defs><marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" style="color:var(--ink-3)"/></marker></defs>
+        <!-- audio -->
+        <rect class="box" x="10" y="80" width="140" height="90" rx="12"/>
+        <path class="wave" d="M30 125 l8 -10 l8 22 l8 -34 l8 40 l8 -26 l8 18 l8 -12 l8 6 l8 -4 l8 2 l8 -2 l8 0"/>
+        <text class="lbl" x="80" y="160" text-anchor="middle">음성 명령</text>
+        <!-- cascade -->
+        <text class="tag" x="200" y="34" fill="var(--cas)">CASCADE · TRANSCRIBE → DECIDE</text>
+        <path class="ar" d="M150 110 C 175 110, 175 70, 198 70"/>
+        <rect class="cas-box" x="200" y="46" width="170" height="48" rx="10"/><text class="t" x="285" y="76" text-anchor="middle">Whisper ASR</text>
+        <path class="ar" d="M370 70 H 408"/>
+        <rect class="box" x="410" y="46" width="200" height="48" rx="10"/><text class="t" x="510" y="76" text-anchor="middle">"알람 맞춰줘"</text>
+        <path class="ar" d="M610 70 H 648"/>
+        <rect class="cas-box" x="650" y="46" width="150" height="48" rx="10"/><text class="t" x="725" y="76" text-anchor="middle">Text classifier</text>
+        <path class="ar" d="M800 70 C 830 70, 830 110, 848 115"/>
+        <!-- direct -->
+        <text class="tag" x="200" y="236" fill="var(--dir)">DIRECT · DECIDE WITHOUT TRANSCRIPT</text>
+        <path class="ar" d="M150 140 C 175 140, 175 180, 198 180"/>
+        <rect class="dir-box" x="200" y="156" width="410" height="48" rx="10"/><text class="t" x="405" y="186" text-anchor="middle">Audio encoder + intent head (no decoding)</text>
+        <path class="ar" d="M610 180 H 848" stroke-dasharray="5 5"/>
+        <!-- output -->
+        <rect class="box" x="850" y="98" width="100" height="58" rx="12"/>
+        <text x="900" y="132" text-anchor="middle" style="font-family:var(--mono);font-size:12px;font-weight:600;fill:var(--ink)">alarm_set</text>
+      </svg>
+      <figcaption class="cap">두 방식 모두 같은 음성을 입력받아 60개 intent에 대한 확률을 출력합니다. 차이는 중간에 텍스트 전사를 거치는지 여부입니다.</figcaption>
+    </figure>
+      <div class="io">
+        <div class="card"><div class="k">Input</div><h4>16 kHz 한국어 음성</h4><p>스마트 스피커 명령 1발화 (평균 약 4초)</p><div class="example">"이번 주 금요일 날씨 알려줘"</div></div>
+        <div class="arrow">→</div>
+        <div class="card"><div class="k">System</div><h4>Cascade or Direct</h4><p>트랙 규칙에 맞는 임의의 모델</p></div>
+        <div class="arrow">→</div>
+        <div class="card"><div class="k">Output</div><h4>Intent + 확률 분포</h4><p>60개 클래스에 대한 확률, 가장 높은 클래스가 예측값</p><div class="example">weather_query</div></div>
+      </div>
+      <div class="grid g2">
+        <div class="card cas"><span class="pill cas">TRACK A · CASCADE</span><h4>Transcribe → Decide</h4><p>중간에 텍스트 전사를 생성하고, 그 텍스트로 의도를 판단합니다. 텍스트 전용 데이터(MASSIVE ko-KR train)를 분류기 학습에 사용할 수 있습니다.</p></div>
+        <div class="card dir"><span class="pill dir">TRACK B · DIRECT</span><h4>Decide without transcript</h4><p>추론 과정에서 텍스트를 생성하지 않고 오디오 표현에서 바로 의도를 분류합니다. 학습용 음성은 제공된 오디오 학습 분할만 사용합니다.</p></div>
+      </div>
+      <h3>공통 규칙</h3>
+      <p>평가셋 음성과 그 정답 텍스트는 학습·모델 선택에 사용할 수 없습니다. 지연시간은 동일 GPU(Colab T4)에서 batch 1, fp16으로 특징 추출부터 최종 확률까지의 end-to-end 시간을 측정합니다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="method" aria-labelledby="h-method">
+  <div class="wrap">
+    <div class="shead"><div class="snum">03 / Baseline &amp; Method</div>
+      <div><h2 id="h-method">베이스라인과 제안 방법</h2>
+      <p class="sintro">공개된 사전학습 모델로 4개의 베이스라인 시스템을 구성했습니다. 학습과 추론 코드는 개인 GitHub 레포의 <code>baseline/</code> 폴더에 있습니다.</p></div>
+    </div>
+    <div class="body">
+      <h3 style="margin-top:0">Baseline systems</h3>
+      <div class="grid g2">
+        <div class="card ref"><span class="pill ref">REFERENCE</span><h4>Oracle text → KLUE-RoBERTa</h4><p>정답 텍스트를 분류기에 그대로 넣은 결과입니다. ASR 오류가 없을 때 Cascade 방식이 낼 수 있는 상한선을 보여주며, 순위에는 포함하지 않습니다.</p><div class="example">cascade.py --oracle</div></div>
+      <div class="card cas"><span class="pill cas">CASCADE</span><h4>Whisper-small → KLUE-RoBERTa</h4><p>Whisper-small(244M)로 한국어 전사(greedy) 후, MASSIVE ko-KR 텍스트로 fine-tuning한 KLUE-RoBERTa-base로 분류합니다.</p><div class="example">cascade.py --asr openai/whisper-small</div></div>
+      <div class="card cas"><span class="pill cas">CASCADE</span><h4>Whisper-large-v3-turbo → KLUE-RoBERTa</h4><p>더 강한 ASR로 교체했을 때 정확도는 얼마나 오르고 지연시간은 얼마나 늘어나는지 확인합니다.</p><div class="example">cascade.py --asr openai/whisper-large-v3-turbo</div></div>
+      <div class="card dir"><span class="pill dir">DIRECT</span><h4>Whisper-small encoder + attentive pooling</h4><p>Whisper-small의 인코더만 가중치를 고정해 사용하고 디코더는 쓰지 않습니다. 인코더 출력에 attentive pooling과 MLP 분류 헤드를 붙여 학습합니다. Whisper-small Cascade와 같은 인코더를 쓰므로 디코딩 유무에 따른 차이를 비교할 수 있습니다.</p><div class="example">train_direct.py · direct_infer.py</div></div>
+      </div>
+      <h3>Proposed method (최종 발표까지 진행)</h3>
+      <p>베이스라인 결과를 바탕으로 아래 두 방법을 실험하고, 결과를 리더보드에 추가할 계획입니다.</p>
+      <div class="grid g2" style="align-items:start">
+      <ul class="timeline">
+        <li class="now"><div class="when">10.29 · Proposal</div><b>챌린지 정의 & 베이스라인 공개</b><span>데이터 분할, 4개 베이스라인, 평가 코드</span></li>
+        <li><div class="when">11.02</div><b>Proposal 발표</b><span>베이스라인 결과 발표</span></li>
+        <li><div class="when">11월</div><b>제안 방법 개발</b><span>지식 증류, 하이브리드 라우팅 실험</span></li>
+        <li><div class="when">12.07</div><b>최종 결과 제출</b><span>리더보드 갱신, 방법별 효과 비교</span></li>
+        <li><div class="when">12.14</div><b>최종 발표</b></li>
+      </ul>
+      <div class="grid">
+        <div class="card dir"><div class="k">Plan 1</div><h4>텍스트 → 음성 지식 증류</h4><p>텍스트로 충분히 학습된 Cascade 분류기를 teacher로 두고, teacher의 출력 확률을 정답 삼아 Direct 모델을 학습합니다. 부족한 음성 데이터를 텍스트 쪽 지식으로 보완하는 것이 목표입니다.</p></div>
+        <div class="card"><div class="k">Plan 2</div><h4>확률 기반 하이브리드</h4><p>Direct 모델의 확률이 충분히 높으면 바로 결정하고, 낮을 때만 Cascade로 넘깁니다. 정확도와 처리 시간 사이에서 두 방식 각각보다 나은 지점이 있는지 확인합니다.</p></div>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="dataset" aria-labelledby="h-data">
+  <div class="wrap">
+    <div class="shead"><div class="snum">04 / Dataset</div>
+      <div><h2 id="h-data">데이터셋</h2>
+      <p class="sintro">Speech-MASSIVE의 한국어 분할(실제 녹음 음성)과 MASSIVE 1.1의 한국어 텍스트를 사용합니다. 평가셋은 학습 오디오와 화자가 겹치지 않도록 나눕니다.</p></div>
+    </div>
+    <div class="body">
+      <div class="tscroll"><table class="tbl">
+        <thead><tr><th>Split</th><th>Source</th><th class="num">Size</th><th>Used by</th></tr></thead>
+        <tbody>
+          <tr><td><b>Text train</b></td><td><a href="https://github.com/alexa/massive" target="_blank" rel="noopener">MASSIVE 1.1</a> ko-KR <code>train</code></td><td class="num">11,514 text</td><td><span class="pill cas">CASCADE</span> 분류기 학습</td></tr>
+          <tr><td><b>Text dev</b></td><td>MASSIVE 1.1 ko-KR <code>dev</code> − eval IDs</td><td class="num">1,338 text</td><td><span class="pill cas">CASCADE</span> 모델 선택</td></tr>
+          <tr><td><b>Audio train</b></td><td><a href="https://huggingface.co/datasets/FBK-MT/Speech-MASSIVE" target="_blank" rel="noopener">Speech-MASSIVE</a> ko-KR <code>validation</code>, 화자 14명</td><td class="num">1,338 audio</td><td><span class="pill dir">DIRECT</span> 헤드 학습</td></tr>
+          <tr class="hl"><td><b>Evaluation ★</b></td><td>Speech-MASSIVE ko-KR <code>validation</code>, 화자 7명</td><td class="num">695 audio</td><td>모든 시스템 평가</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">화자 단위 분할(seed 42) 결과입니다. 평가셋은 0.77시간, 57개 intent를 포함합니다. 한국어 validation 분할의 화자가 21명이라 평가 화자가 7명으로 적다는 점은 이 벤치마크의 한계로 둡니다.</p>
+
+      <h3>Speech-MASSIVE ko-KR validation 분할 (총 2,033 발화)</h3>
+      <div class="split" aria-hidden="true">
+        <div style="width:65.8%;background:var(--dir)">Audio train · 1,338 utt · 14 spk</div>
+        <div style="width:34.2%;background:var(--ink)">Eval · 695 · 7 spk</div>
+      </div>
+      <div class="legend"><span>화자 단위 분할: 같은 사람의 목소리가 학습과 평가에 동시에 등장하지 않음</span><span>seed 42</span></div>
+
+      <div class="grid g3" style="margin-top:22px">
+        <div class="card"><div class="k">Labels</div><h4>60 intents · 18 scenarios</h4><p>alarm, weather, music, iot, calendar 등 스마트 스피커 도메인 전반</p></div>
+        <div class="card"><div class="k">Audio</div><h4>16 kHz mono FLAC</h4><p>평가셋은 오디오와 메타데이터(<code>eval.jsonl</code>)를 레포에 그대로 포함</p></div>
+        <div class="card"><div class="k">License</div><h4>CC BY-NC-SA 4.0</h4><p>비상업적 교육 목적 사용, 원 데이터셋 출처 표기</p></div>
+      </div>
+      <h3>Direct 학습 오디오가 더 적은 이유</h3>
+      <p>Speech-MASSIVE 한국어는 train 분할의 음성이 녹음되지 않아, 텍스트는 1만 개 이상이지만 라벨링된 음성은 약 2천 개입니다. 텍스트 데이터는 많고 음성 데이터는 적은 상황은 실제 서비스를 만들 때도 흔하기 때문에, 이 조건을 그대로 유지한 채 두 방식을 비교합니다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="evaluation" aria-labelledby="h-eval">
+  <div class="wrap">
+    <div class="shead"><div class="snum">05 / Evaluation Setup</div>
+      <div><h2 id="h-eval">평가 방법</h2>
+      <p class="sintro">모든 시스템은 동일한 평가셋 전체에 대해 발화별 예측·확률·지연시간을 기록하고, 같은 스크립트(<code>evaluation/evaluate.py</code>)로 채점합니다.</p></div>
+    </div>
+    <div class="body">
+      <div class="tscroll"><table class="tbl">
+        <thead><tr><th>Metric</th><th>Definition</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td><b>Accuracy ↑</b><br><span class="pending">primary</span></td><td>top-1 예측 intent가 정답과 일치하는 비율</td><td>결정 태스크의 기본 성능</td></tr>
+          <tr><td><b>Macro-F1 ↑</b></td><td>평가셋에 등장한 intent별 F1의 평균</td><td>빈도가 낮은 명령에서의 성능 확인</td></tr>
+          <tr><td><b>ECE ↓</b></td><td>15개 구간으로 나눈 top-1 confidence와 실제 정답률의 가중 평균 차이</td><td>임계값 기반 실행/되묻기 정책의 신뢰성</td></tr>
+          <tr><td><b>Latency ↓</b></td><td>발화당 end-to-end 시간의 median / p90 (T4, batch 1, fp16, warm-up 제외)</td><td>Direct 방식 속도 주장의 동일 조건 검증</td></tr>
+          <tr><td><b>CER ↓</b></td><td>Cascade ASR의 문자 오류율 (공백·문장부호 제거)</td><td>Cascade 오류의 원인 분석</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">순위는 Accuracy 기준이며, 동점일 경우 median latency가 낮은 시스템이 앞섭니다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="leaderboard" aria-labelledby="h-lb">
+  <div class="wrap">
+    <div class="shead"><div class="snum">06 / Leaderboard</div>
+      <div><h2 id="h-lb">리더보드</h2>
+      <p class="sintro">동일한 평가셋과 측정 환경에서 얻은 베이스라인 성능입니다. 평가 코드(<code>evaluation/</code>)를 실행하면 같은 표를 재현할 수 있습니다.</p></div>
+    </div>
+    <div class="body">
+      <div class="lb-status" id="lb-status"><span class="dot"></span><span>베이스라인 결과 반영 완료</span></div>
+      <div class="tscroll"><table class="tbl" id="lb">
+        <thead><tr><th>Rank</th><th>System</th><th>Track</th><th class="num">Acc ↑</th><th class="num">Macro-F1 ↑</th><th class="num">ECE ↓</th><th class="num">Latency ms ↓</th><th class="num">CER ↓</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <p class="note" id="lb-note"></p>
+      <h3>베이스라인 결과 요약</h3>
+      <p>Cascade(Whisper-large-v3-turbo)는 정확도 85.3%로 정답 텍스트를 넣은 Oracle(87.9%)과 2.6%p 차이에 그쳐, 한국어 명령에서는 ASR 오류의 영향이 크지 않았습니다. Direct는 정확도가 66.3%로 19.0%p 낮았지만, 처리 시간은 39.9ms로 Cascade(245.0ms)보다 약 6배 짧았습니다. 확률 보정 오차(ECE)도 Direct가 0.073으로 가장 컸습니다.</p>
+      <p>Direct의 정확도 차이는 학습에 쓸 수 있는 음성이 1,338개뿐이라는 데이터 조건과 관련이 있다고 보고, 제안 방법(텍스트 지식 증류, 확률 기반 하이브리드)에서 이 차이를 줄이는 것을 목표로 합니다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="resources" aria-labelledby="h-res">
+  <div class="wrap">
+    <div class="shead"><div class="snum">07 / References</div>
+      <div><h2 id="h-res">코드와 참고문헌</h2>
+      <p class="sintro">베이스라인 코드, 평가용 데이터셋, 평가 코드는 아래 GitHub 레포에서 확인할 수 있습니다.</p></div>
+    </div>
+    <div class="body">
+      <div class="links">
+        <a href="https://github.com/gitminseung/cascade-vs-direct-slu" target="_blank" rel="noopener"><div class="card"><div class="k">Repository</div><h4>Personal GitHub ↗</h4><p>전체 코드와 재현 방법</p></div></a>
+        <a href="https://github.com/gitminseung/cascade-vs-direct-slu/tree/main/baseline" target="_blank" rel="noopener"><div class="card"><div class="k">Baseline</div><h4>baseline/ ↗</h4><p>Cascade · Direct 학습/추론</p></div></a>
+        <a href="https://github.com/gitminseung/cascade-vs-direct-slu/tree/main/data" target="_blank" rel="noopener"><div class="card"><div class="k">Dataset</div><h4>data/ ↗</h4><p>분할 스크립트 + 평가셋</p></div></a>
+        <a href="https://github.com/gitminseung/cascade-vs-direct-slu/tree/main/evaluation" target="_blank" rel="noopener"><div class="card"><div class="k">Evaluation</div><h4>evaluation/ ↗</h4><p>지표 계산 · 리더보드</p></div></a>
+      </div>
+      <h3>References</h3>
+      <ol class="refs">
+        <li>B. Lee et al., <a href="https://arxiv.org/abs/2408.03900" target="_blank" rel="noopener">Speech-MASSIVE: A Multilingual Speech Dataset for SLU and Beyond</a>, Interspeech 2024.</li>
+        <li>J. FitzGerald et al., <a href="https://arxiv.org/abs/2204.08582" target="_blank" rel="noopener">MASSIVE: A 1M-Example Multilingual NLU Dataset with 51 Typologically-Diverse Languages</a>, ACL 2023.</li>
+        <li>E. Bastianelli et al., SLURP: A Spoken Language Understanding Resource Package, EMNLP 2020.</li>
+        <li>A. Radford et al., Robust Speech Recognition via Large-Scale Weak Supervision (Whisper), ICML 2023.</li>
+        <li>S. Park et al., KLUE: Korean Language Understanding Evaluation, NeurIPS Datasets &amp; Benchmarks 2021.</li>
+        <li>C. Guo et al., On Calibration of Modern Neural Networks, ICML 2017.</li>
+        <li>Lv et al., AudioJev: Direct Audio Decisions with Order-Calibrated Probabilities, arXiv:2610.01293, 2026.</li>
+        <li>Token Foundry, Alibaba Group, Qwen-Audio-Jev: A Unified Interface for Audio Decisions, arXiv:2610.21614, 2026.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap">Speech Recognition Challenge 2026 · Team 14 · 김민승 (202020760)</div></footer>
+
+<!-- Leaderboard data: replaced automatically by evaluation/make_leaderboard.py --html -->
+<script id="lb-data" type="application/json">
+[
+ {
+  "rank": 1,
+  "system": "cascade_whisper-large-v3-turbo",
+  "track": "Cascade",
+  "description": "Whisper-large-v3-turbo → KLUE-RoBERTa",
+  "reference_only": false,
+  "n": 695,
+  "accuracy": 0.8532,
+  "macro_f1": 0.8066,
+  "ece": 0.0244,
+  "latency_ms_median": 245.0,
+  "cer": 0.0528
+ },
+ {
+  "rank": 2,
+  "system": "cascade_whisper-small",
+  "track": "Cascade",
+  "description": "Whisper-small → KLUE-RoBERTa",
+  "reference_only": false,
+  "n": 695,
+  "accuracy": 0.8273,
+  "macro_f1": 0.7814,
+  "ece": 0.0361,
+  "latency_ms_median": 208.6,
+  "cer": 0.0995
+ },
+ {
+  "rank": 3,
+  "system": "direct_whisper-small",
+  "track": "Direct",
+  "description": "Whisper-small encoder + attentive pooling",
+  "reference_only": false,
+  "n": 695,
+  "accuracy": 0.6633,
+  "macro_f1": 0.5811,
+  "ece": 0.0728,
+  "latency_ms_median": 39.9,
+  "cer": null
+ },
+ {
+  "rank": null,
+  "system": "oracle_text",
+  "track": "Oracle",
+  "description": "Gold transcript → KLUE-RoBERTa",
+  "reference_only": true,
+  "n": 695,
+  "accuracy": 0.8791,
+  "macro_f1": 0.8234,
+  "ece": 0.0377,
+  "latency_ms_median": 9.1,
+  "cer": null
+ }
+]
+</script>
+<script>
+(function(){
+  var rows=[];
+  try{rows=JSON.parse(document.getElementById('lb-data').textContent)}catch(e){}
+  var tb=document.querySelector('#lb tbody');
+  var pending=rows.some(function(r){return r.pending});
+  var cls={Cascade:'cas',Direct:'dir',Oracle:'ref'};
+  function f(v,p){return (v===null||v===undefined)?'<span class="pending">—</span>':Number(v).toFixed(p)}
+  rows.forEach(function(r){
+    var tr=document.createElement('tr');
+    var t=cls[r.track]||'ref';
+    var rank=r.pending?'<span class="pending">TBD</span>':(r.rank?'<span class="rank">'+r.rank+'</span>':'<span class="pending">ref</span>');
+    var cells=r.pending
+      ? '<td class="num" colspan="5"><span class="pending">측정 중</span></td>'
+      : '<td class="num">'+f(r.accuracy,4)+'</td><td class="num">'+f(r.macro_f1,4)+'</td><td class="num">'+f(r.ece,4)+'</td><td class="num">'+f(r.latency_ms_median,1)+'</td><td class="num">'+f(r.cer,4)+'</td>';
+    tr.innerHTML='<td>'+rank+'</td><td><b>'+r.description+'</b></td><td><span class="pill '+t+'">'+r.track.toUpperCase()+'</span></td>'+cells;
+    if(r.rank===1) tr.className='hl';
+    tb.appendChild(tr);
+  });
+  if(!pending && rows.length){
+    var st=document.getElementById('lb-status');
+    st.innerHTML='<span class="dot done"></span><span>Baseline 결과 반영 완료 · 평가 발화 '+(rows[0].n||'')+'개</span>';
+    document.getElementById('lb-note').textContent='Oracle은 정답 텍스트를 사용한 상한선으로 순위에서 제외됩니다. Latency는 Colab T4에서 발화 1개씩(batch 1) 처리한 median 값입니다.';
+  }else{
+    document.getElementById('lb-note').textContent='시스템 구성과 평가 방법은 확정되었고, 수치는 실험이 끝나는 대로 반영합니다.';
+  }
+  // active tab highlight
+  var tabs=[].slice.call(document.querySelectorAll('.nav a.tab'));
+  var ids=tabs.map(function(a){return a.getAttribute('href').slice(1)});
+  function onScroll(){
+    var y=window.scrollY+100, cur=ids[0];
+    ids.forEach(function(id){var el=document.getElementById(id); if(el && el.offsetTop<=y) cur=id;});
+    tabs.forEach(function(a){a.classList.toggle('on',a.getAttribute('href')==='#'+cur)});
+  }
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+})();
+</script>
+</body>
+</html>

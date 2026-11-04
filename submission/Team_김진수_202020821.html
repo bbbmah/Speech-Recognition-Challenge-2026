@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K-NumASR Challenge · Team 김진수</title>
+<style>
+:root {
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --ink: #141a2e;
+  --muted: #4a5470;
+  --line: #dfe3ee;
+  --accent: #0b5cad;
+  --accent-ink: #ffffff;
+  --accent-soft: #e6f0fb;
+  --hero: #0f1b3d;
+  --hero-ink: #ffffff;
+  --hero-muted: #c9d3ee;
+  --ok: #0d6b3a;
+  --ok-bg: #dff3e7;
+  --bad: #9b1c1c;
+  --bad-bg: #fbe3e3;
+  --prop-bg: #fff1d6;
+  --prop-ink: #6b4500;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif; line-height: 1.7; font-size: 16px; }
+a { color: var(--accent); }
+.mono { font-family: "JetBrains Mono", "D2Coding", Consolas, monospace; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+header.hero { background: var(--hero); color: var(--hero-ink); padding: 56px 0 40px; }
+.hero .eyebrow { color: var(--hero-muted); font-size: 14px; letter-spacing: .04em; }
+.hero h1 { font-size: clamp(32px, 6vw, 52px); margin: 8px 0 4px; letter-spacing: -.02em; }
+.hero h1 span { color: #8ec5ff; }
+.hero .sub { font-size: clamp(17px, 2.4vw, 21px); color: var(--hero-ink); margin: 0 0 18px; }
+.hero p.lead { color: var(--hero-muted); max-width: 760px; margin: 0 0 28px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 28px; }
+.fact { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); border-radius: 12px; padding: 14px 16px; }
+.fact .k { font-size: 12px; color: var(--hero-muted); }
+.fact .v { font-weight: 700; color: var(--hero-ink); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { display: inline-block; padding: 10px 18px; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 15px; }
+.btn-main { background: #ffffff; color: var(--hero); }
+.btn-ghost { border: 1px solid rgba(255,255,255,.5); color: var(--hero-ink); }
+nav.toc { position: sticky; top: 0; z-index: 10; background: var(--card); border-bottom: 1px solid var(--line); }
+nav.toc .wrap { display: flex; gap: 4px; overflow-x: auto; padding-top: 8px; padding-bottom: 8px; }
+nav.toc a { white-space: nowrap; text-decoration: none; color: var(--muted); font-size: 14px; padding: 6px 12px; border-radius: 999px; }
+nav.toc a:hover { background: var(--accent-soft); color: var(--accent); }
+section { padding: 52px 0 8px; }
+.sec-no { color: var(--accent); font-weight: 700; font-size: 14px; letter-spacing: .06em; }
+h2 { font-size: clamp(24px, 3.4vw, 30px); margin: 4px 0 16px; letter-spacing: -.01em; }
+h3 { font-size: 19px; margin: 24px 0 8px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.callout { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 14px 18px; border-radius: 0 10px 10px 0; color: var(--ink); }
+.compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 14px; }
+.cmp { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.cmp .who { font-weight: 700; }
+.cmp .out { font-family: "JetBrains Mono", Consolas, monospace; font-size: 14px; margin: 6px 0; word-break: break-all; }
+.tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; vertical-align: middle; }
+.tag-ok { background: var(--ok-bg); color: var(--ok); }
+.tag-bad { background: var(--bad-bg); color: var(--bad); }
+.tag-base { background: #e8ebf3; color: #2b3450; }
+.tag-prop { background: var(--prop-bg); color: var(--prop-ink); }
+.pipeline { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; }
+.step { flex: 1 1 170px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.step .n { display: inline-block; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 12px; border-radius: 6px; padding: 1px 8px; }
+.step .t { font-weight: 700; margin: 6px 0 2px; }
+.step .d { font-size: 14px; color: var(--muted); }
+.arrow { align-self: center; color: var(--muted); font-size: 22px; }
+.cats { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.cat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.cat-head { display: flex; justify-content: space-between; align-items: baseline; }
+.cat-name { font-weight: 700; font-size: 17px; }
+.cat-key { font-family: Consolas, monospace; font-size: 13px; color: var(--muted); }
+.cat p { font-size: 14px; color: var(--muted); margin: 6px 0 10px; }
+.pair { display: flex; gap: 10px; font-size: 14px; margin: 4px 0; }
+.pair .lab { flex: 0 0 34px; font-weight: 700; color: var(--accent); }
+.method { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.method .head { display: flex; gap: 8px; align-items: center; font-weight: 700; font-size: 17px; }
+.method p { margin: 8px 0 0; font-size: 15px; color: var(--muted); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { background: #1c2a52; color: #ffffff; font-weight: 700; font-size: 14px; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.strong { font-weight: 700; color: var(--accent); }
+td.rank { font-weight: 700; width: 48px; }
+td.sys { white-space: nowrap; }
+td.pending { text-align: center; color: var(--muted); padding: 22px; }
+.note { font-size: 14px; color: var(--muted); margin-top: 10px; }
+code { background: #eef1f7; color: #1c2a52; padding: 1px 6px; border-radius: 5px; font-size: 14px; }
+.links { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.link { display: block; text-decoration: none; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; color: var(--ink); }
+.link:hover { border-color: var(--accent); }
+.link .k { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .05em; }
+.link .v { font-weight: 700; }
+.link .d { font-size: 14px; color: var(--muted); }
+ol.refs li { margin-bottom: 6px; }
+footer { margin-top: 56px; padding: 26px 0; background: var(--hero); color: var(--hero-muted); font-size: 14px; }
+@media (max-width: 640px) { .arrow { display: none; } .card { padding: 18px; } }
+</style>
+</head>
+<body>
+<header class="hero" id="top">
+<div class="wrap">
+<div class="eyebrow">Ajou University · Speech Recognition Challenge 2026</div>
+<h1>K-Num<span>ASR</span></h1>
+<p class="sub">한국어 숫자 발화 음성인식 벤치마크</p>
+<p class="lead">전화번호, 계좌번호, 금액, 날짜·시간, 고유어 수량 표현이 들어간 한국어 음성을 듣고 숫자를 한 자리도 틀리지 않게 받아쓰는 Challenge입니다. 문자 오류율이 아니라 숫자 단위의 완전 일치로 평가합니다.</p>
+<div class="facts">
+<div class="fact"><div class="k">Team</div><div class="v">Team 김진수</div></div>
+<div class="fact"><div class="k">Members</div><div class="v">김진수</div></div>
+<div class="fact"><div class="k">Primary Metric</div><div class="v">NEM (Numeric Exact Match) ↑</div></div>
+<div class="fact"><div class="k">Evaluation Set</div><div class="v">436 utterances</div></div>
+<div class="fact"><div class="k">Best System</div><div class="v">whisper-large-v3-turbo + NumPrompt + K-ITN · NEM 84.9</div></div>
+</div>
+<div class="btns">
+<a class="btn btn-main" href="https://github.com/JinsooKim0118/K-NumASR" target="_blank" rel="noopener">GitHub Repository ↗</a>
+<a class="btn btn-ghost" href="#leaderboard">Leaderboard</a>
+</div>
+</div>
+</header>
+
+<nav class="toc"><div class="wrap">
+<a href="#description">1 Description</a>
+<a href="#pipeline">2 Pipeline</a>
+<a href="#method">3 Baseline &amp; Method</a>
+<a href="#dataset">4 Dataset</a>
+<a href="#evaluation">5 Evaluation Setup</a>
+<a href="#leaderboard">6 Leaderboard</a>
+<a href="#examples">7 Error Analysis</a>
+<a href="#references">8 Code &amp; References</a>
+</div></nav>
+
+<main class="wrap">
+<section id="description">
+<div class="sec-no">01 · DESCRIPTION</div>
+<h2>Challenge Description</h2>
+<div class="card">
+<p>콜센터 상담, 은행 ARS, 예약 시스템처럼 음성인식이 실제로 쓰이는 곳에서 가장 중요한 정보는 숫자입니다. 그런데 한국어 숫자 발화는 음성인식에 특히 까다롭습니다. 같은 숫자도 <strong>한자어</strong>(삼, 십오)와 <strong>고유어</strong>(세, 열다섯)로 읽히고, 전화번호는 <strong>자릿수 단위</strong>(공일공)로, 금액은 <strong>만·억 단위</strong>(삼만 오천)로 읽힙니다. 6월과 10월은 <strong>유월, 시월</strong>처럼 불규칙하게 읽습니다.</p>
+<p>기존 벤치마크는 CER(문자 오류율)로 평가하기 때문에, 계좌번호 한 자리가 틀려도 거의 감점되지 않습니다. 하지만 실제로는 송금이 실패하는 치명적인 오류입니다. K-NumASR은 숫자가 포함된 한국어 발화만 모은 평가 세트와 숫자 단위의 엄격한 지표로 이 문제를 측정합니다.</p>
+<div class="callout"><strong>목표</strong> · 숫자가 포함된 한국어 음성을 입력받아, 숫자를 아라비아 숫자로 정확히 표기한 전사문을 출력하는 시스템을 만들고 NEM으로 비교합니다.</div>
+</div>
+<h3>같은 음성, 세 가지 출력</h3>
+<p class="note" style="margin-top:0">음성: “계좌번호는 삼삼공일 이이 오칠팔구예요” · 정답: <code>3301-22-5789</code></p>
+<div class="compare">
+<div class="cmp"><div class="who">모델 A</div><div class="out">3301-22-5789</div><span class="tag tag-ok">CER 0% · NEM 정답</span></div>
+<div class="cmp"><div class="who">모델 B</div><div class="out">3301-22-5781</div><span class="tag tag-bad">한 자리 오류 · NEM 오답</span></div>
+<div class="cmp"><div class="who">모델 C</div><div class="out">삼삼공일 이이 오칠팔구</div><span class="tag tag-bad">소리는 맞음 · 표기 실패</span></div>
+</div>
+<p class="note">모델 B는 CER로는 거의 만점이지만 실제로는 실패입니다. 모델 C는 잘못 들은 것이 아니라 숫자 표기 변환(ITN)에 실패한 경우로, K-NumASR은 두 경우를 구분해서 진단합니다.</p>
+</section>
+
+<section id="pipeline">
+<div class="sec-no">02 · PIPELINE</div>
+<h2>Task &amp; Pipeline</h2>
+<div class="pipeline">
+<div class="step"><span class="n">1</span><div class="t">평가 데이터 구축</div><div class="d">템플릿 문장 생성 → 발음형 텍스트로 TTS 합성 + FLEURS-ko 숫자 발화 추출</div></div>
+<div class="arrow">→</div>
+<div class="step"><span class="n">2</span><div class="t">음성인식</div><div class="d">16 kHz 음성을 ASR 모델에 입력해 한국어 전사문 출력</div></div>
+<div class="arrow">→</div>
+<div class="step"><span class="n">3</span><div class="t">숫자 표기 처리</div><div class="d">선택 사항: NumPrompt로 디코딩 유도, K-ITN으로 후처리</div></div>
+<div class="arrow">→</div>
+<div class="step"><span class="n">4</span><div class="t">채점</div><div class="d">숫자열 추출 → NEM, DER, CER, NEM-norm 계산 → 리더보드</div></div>
+</div>
+<div class="card" style="margin-top:14px">
+<p style="margin-top:0"><strong>Input</strong> · 숫자가 포함된 한국어 발화 (16 kHz mono)</p>
+<p><strong>Output</strong> · 숫자를 아라비아 숫자로 표기한 한국어 전사문 (예: <code>오후 3시 20분</code>, <code>35,000원</code>, <code>23살</code>)</p>
+<p style="margin-bottom:0"><strong>Rule</strong> · 평가 세트를 학습에 사용하면 안 됩니다. 숫자 사이의 구분자(<code>-</code> <code>,</code> <code>.</code> <code>:</code> 공백)는 채점에서 무시합니다.</p>
+</div>
+</section>
+
+<section id="method">
+<div class="sec-no">03 · METHOD</div>
+<h2>Baseline &amp; Proposed Method</h2>
+<h3>Baseline</h3>
+<div class="grid3">
+<div class="method"><div class="head">Whisper <span class="tag tag-base">Baseline</span></div><p>OpenAI Whisper tiny, base, small, medium, large-v3-turbo, large-v3. 언어를 <code>ko</code>로 고정한 그대로의 출력입니다. 모델 크기에 따른 숫자 인식 성능 변화를 봅니다.</p></div>
+<div class="method"><div class="head">wav2vec2 XLS-R <span class="tag tag-base">Baseline</span></div><p>한국어로 파인튜닝된 CTC 모델(<code>kresnik/wav2vec2-large-xlsr-korean</code>). 숫자를 한글 발음형으로 출력하는 대표적인 비교군입니다.</p></div>
+</div>
+<h3>Proposed</h3>
+<div class="grid3">
+<div class="method"><div class="head">K-ITN <span class="tag tag-prop">Proposed</span></div><p>한국어 숫자 표현을 아라비아 숫자로 바꾸는 규칙 기반 후처리입니다. 한자어(삼만 오천 원 → 35000원), 고유어(스물세 살 → 23살), 자릿수 읽기(공일공 → 010), 혼합 표기(3만 5천 → 35000), 유월·시월을 처리하고, 이분·이번처럼 숫자로 오인되기 쉬운 단어는 예외 처리합니다.</p></div>
+<div class="method"><div class="head">NumPrompt <span class="tag tag-prop">Proposed</span></div><p>Whisper의 <code>prompt_ids</code>에 숫자 표기 예시 문장(전화번호, 계좌, 금액, 날짜)을 넣어, 추가 학습 없이 디코더가 쓰기형 숫자를 출력하도록 유도합니다.</p></div>
+<div class="method"><div class="head">NumPrompt + K-ITN <span class="tag tag-prop">Proposed</span></div><p>디코딩 단계의 유도와 후처리 단계의 보정을 결합합니다. 모든 Baseline에도 K-ITN을 적용한 결과를 함께 보고해 후처리 효과를 분리합니다.</p></div>
+</div>
+</section>
+
+<section id="dataset">
+<div class="sec-no">04 · DATASET</div>
+<h2>Benchmark Dataset</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Subset</th><th>Source</th><th>Scale</th><th>Speech</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><strong>K-Num Synthetic</strong></td><td>자체 구축 (템플릿 + TTS)</td><td>5 유형 × 60 = 300</td><td>edge-tts 한국어 3개 음성(SunHi, InJoon, Hyunsu) × 발화 속도 3단계</td><td>유형별 숫자 인식 능력 평가</td></tr>
+<tr><td><strong>FLEURS-Num</strong></td><td><a href="https://huggingface.co/datasets/google/fleurs" target="_blank" rel="noopener">google/fleurs</a> ko_kr dev + test</td><td>136 발화 (dev 50 + test 86)</td><td>실제 사람 낭독</td><td>자연 발화에서의 숫자 인식 평가</td></tr>
+</tbody></table></div>
+<p class="note">FLEURS-ko에서 정답 문장에 아라비아 숫자가 들어 있는 발화만 추출했습니다(연도, 단위, 수량 등). 전화번호나 계좌번호는 개인정보라서 공개 음성 데이터에 거의 없기 때문에, 이 유형은 합성 세트로 직접 구축했습니다.</p>
+<h3>K-Num Synthetic 유형</h3>
+<div class="cats">
+<div class="cat">
+<div class="cat-head"><span class="cat-name">전화번호</span><span class="cat-key">phone</span></div>
+<p>휴대전화, 지역번호, 대표번호를 자릿수 단위로 읽습니다. 0은 '공'으로 읽습니다.</p>
+<div class="pair"><span class="lab">발음</span><span>수빈 씨 번호가 공일공 오팔팔일 삼구구팔 맞나요?</span></div>
+<div class="pair"><span class="lab">정답</span><span class="mono">수빈 씨 번호가 010-5881-3998 맞나요?</span></div>
+</div>
+<div class="cat">
+<div class="cat-head"><span class="cat-name">계좌번호</span><span class="cat-key">account</span></div>
+<p>3-2-6, 4-3-6 등 은행별 형식의 긴 자릿수 열입니다. 한 자리 오류도 송금 실패로 이어집니다.</p>
+<div class="pair"><span class="lab">발음</span><span>받는 분 계좌는 국민은행 공칠오사 칠삼오 사팔육사삼구, 예금주는 지영입니다.</span></div>
+<div class="pair"><span class="lab">정답</span><span class="mono">받는 분 계좌는 국민은행 0754-735-486439, 예금주는 지영입니다.</span></div>
+</div>
+<div class="cat">
+<div class="cat-head"><span class="cat-name">금액</span><span class="cat-key">amount</span></div>
+<p>백 원부터 억 단위까지의 금액입니다. 만·억 단위 한자어 수사와 쉼표 표기가 필요합니다.</p>
+<div class="pair"><span class="lab">발음</span><span>이번 달 관리비는 사천칠백 원이 나왔어요.</span></div>
+<div class="pair"><span class="lab">정답</span><span class="mono">이번 달 관리비는 4,700원이 나왔어요.</span></div>
+</div>
+<div class="cat">
+<div class="cat-head"><span class="cat-name">날짜·시간</span><span class="cat-key">datetime</span></div>
+<p>유월·시월 같은 불규칙 읽기, 고유어 '시'와 한자어 '분'이 섞인 시각을 포함합니다.</p>
+<div class="pair"><span class="lab">발음</span><span>예약 시간은 오전 아홉 시 사십오 분입니다.</span></div>
+<div class="pair"><span class="lab">정답</span><span class="mono">예약 시간은 오전 9시 45분입니다.</span></div>
+</div>
+<div class="cat">
+<div class="cat-head"><span class="cat-name">고유어 수량</span><span class="cat-key">native</span></div>
+<p>스물세 살, 열다섯 개처럼 고유어 수사와 단위 명사가 결합된 표현입니다.</p>
+<div class="pair"><span class="lab">발음</span><span>상자 일곱 개 주세요.</span></div>
+<div class="pair"><span class="lab">정답</span><span class="mono">상자 7개 주세요.</span></div>
+</div>
+</div>
+<p class="note">정답은 쓰기형, TTS 입력은 코드로 생성한 발음형입니다. 발음을 직접 통제하기 때문에 TTS가 숫자를 임의로 읽어 정답과 어긋나는 문제를 막습니다. 모든 문장은 <code>seed=2026</code>으로 재현됩니다. 모든 음성은 16 kHz mono FLAC으로 저장했습니다.</p>
+</section>
+
+<section id="evaluation">
+<div class="sec-no">05 · EVALUATION</div>
+<h2>Evaluation Setup</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Metric</th><th>Role</th><th>Calculation</th></tr></thead>
+<tbody>
+<tr><td><strong>NEM ↑</strong></td><td>Primary</td><td>발화 안의 모든 숫자열이 정답과 순서까지 완전히 일치한 발화의 비율</td></tr>
+<tr><td>DER ↓</td><td>Digit-level</td><td>숫자만 이어 붙인 문자열의 편집 거리 ÷ 정답 숫자 개수</td></tr>
+<tr><td>CER ↓</td><td>Reference</td><td>문장부호와 공백을 제거한 문자 단위 오류율 (기존 지표와의 비교용)</td></tr>
+<tr><td>NEM-norm ↑</td><td>Diagnostic</td><td>정답과 예측 모두에 K-ITN을 적용해 표기 방식을 통일한 뒤 계산한 NEM. NEM과의 차이가 “들었지만 표기하지 못한” 비율</td></tr>
+</tbody></table></div>
+<div class="card" style="margin-top:14px">
+<p style="margin-top:0"><strong>정규화 규칙</strong> · 유니코드 NFKC 정규화 후, 숫자와 숫자 사이의 구분자(<code>-</code> <code>,</code> <code>.</code> <code>:</code> <code>/</code> 공백)를 제거하고 숫자열을 추출합니다. 따라서 <code>010-1234-5678</code>과 <code>010 1234 5678</code>은 같은 답으로 봅니다.</p>
+<p style="margin-bottom:0"><strong>공정성</strong> · 모든 시스템은 같은 평가 음성, 같은 디코딩 설정(언어 <code>ko</code>, greedy decoding, fp16, Colab GPU), 같은 채점 코드(<code>scripts/evaluate.py</code>)로 평가했습니다.</p>
+</div>
+</section>
+
+<section id="leaderboard">
+<div class="sec-no">06 · RESULTS</div>
+<h2>Leaderboard</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Rank</th><th>System</th><th>NEM ↑</th><th>NEM Syn ↑</th><th>NEM FLEURS ↑</th><th>DER ↓</th><th>CER ↓</th><th>NEM-norm ↑</th></tr></thead>
+<tbody>
+<tr><td class="rank">1</td><td class="sys">whisper-large-v3-turbo + NumPrompt + K-ITN <span class="tag tag-prop">Proposed</span></td><td class="num strong">84.9</td><td class="num">88.3</td><td class="num">77.2</td><td class="num">4.8</td><td class="num">4.9</td><td class="num">86.0</td></tr>
+<tr><td class="rank">2</td><td class="sys">whisper-large-v3 + K-ITN <span class="tag tag-prop">Proposed</span></td><td class="num strong">83.0</td><td class="num">86.0</td><td class="num">76.5</td><td class="num">5.0</td><td class="num">4.9</td><td class="num">84.2</td></tr>
+<tr><td class="rank">3</td><td class="sys">whisper-large-v3-turbo + K-ITN <span class="tag tag-prop">Proposed</span></td><td class="num strong">82.8</td><td class="num">87.0</td><td class="num">73.5</td><td class="num">5.4</td><td class="num">5.1</td><td class="num">83.9</td></tr>
+<tr><td class="rank">4</td><td class="sys">whisper-medium + K-ITN <span class="tag tag-prop">Proposed</span></td><td class="num strong">82.3</td><td class="num">79.7</td><td class="num">88.2</td><td class="num">4.9</td><td class="num">5.3</td><td class="num">83.5</td></tr>
+<tr><td class="rank">5</td><td class="sys">whisper-medium <span class="tag tag-base">Baseline</span></td><td class="num strong">72.9</td><td class="num">65.3</td><td class="num">89.7</td><td class="num">10.0</td><td class="num">6.7</td><td class="num">83.5</td></tr>
+<tr><td class="rank">6</td><td class="sys">whisper-large-v3-turbo + NumPrompt <span class="tag tag-prop">Proposed</span></td><td class="num strong">71.6</td><td class="num">73.3</td><td class="num">67.6</td><td class="num">12.2</td><td class="num">6.9</td><td class="num">86.0</td></tr>
+<tr><td class="rank">7</td><td class="sys">whisper-small + NumPrompt + K-ITN <span class="tag tag-prop">Proposed</span></td><td class="num strong">68.8</td><td class="num">64.0</td><td class="num">79.4</td><td class="num">12.2</td><td class="num">9.5</td><td class="num">69.5</td></tr>
+<tr><td class="rank">8</td><td class="sys">whisper-small + K-ITN <span class="tag tag-prop">Proposed</span></td><td class="num strong">68.6</td><td class="num">63.0</td><td class="num">80.9</td><td class="num">10.0</td><td class="num">8.1</td><td class="num">69.5</td></tr>
+<tr><td class="rank">9</td><td class="sys">whisper-large-v3-turbo <span class="tag tag-base">Baseline</span></td><td class="num strong">67.7</td><td class="num">71.0</td><td class="num">60.3</td><td class="num">13.9</td><td class="num">7.4</td><td class="num">83.9</td></tr>
+<tr><td class="rank">10</td><td class="sys">whisper-large-v3 <span class="tag tag-base">Baseline</span></td><td class="num strong">64.7</td><td class="num">66.7</td><td class="num">60.3</td><td class="num">14.3</td><td class="num">7.4</td><td class="num">84.2</td></tr>
+<tr><td class="rank">11</td><td class="sys">whisper-small + NumPrompt <span class="tag tag-prop">Proposed</span></td><td class="num strong">61.0</td><td class="num">52.7</td><td class="num">79.4</td><td class="num">14.7</td><td class="num">10.5</td><td class="num">69.5</td></tr>
+<tr><td class="rank">12</td><td class="sys">whisper-small <span class="tag tag-base">Baseline</span></td><td class="num strong">59.6</td><td class="num">50.0</td><td class="num">80.9</td><td class="num">13.4</td><td class="num">9.3</td><td class="num">69.5</td></tr>
+<tr><td class="rank">13</td><td class="sys">whisper-base + K-ITN <span class="tag tag-prop">Proposed</span></td><td class="num strong">47.7</td><td class="num">38.7</td><td class="num">67.6</td><td class="num">40.4</td><td class="num">21.1</td><td class="num">48.2</td></tr>
+<tr><td class="rank">14</td><td class="sys">whisper-base <span class="tag tag-base">Baseline</span></td><td class="num strong">38.3</td><td class="num">25.3</td><td class="num">66.9</td><td class="num">44.2</td><td class="num">22.4</td><td class="num">48.2</td></tr>
+<tr><td class="rank">15</td><td class="sys">wav2vec2-xlsr-ko + K-ITN <span class="tag tag-prop">Proposed</span></td><td class="num strong">36.5</td><td class="num">35.7</td><td class="num">38.2</td><td class="num">45.3</td><td class="num">25.8</td><td class="num">36.7</td></tr>
+<tr><td class="rank">16</td><td class="sys">whisper-tiny + K-ITN <span class="tag tag-prop">Proposed</span></td><td class="num strong">28.7</td><td class="num">22.7</td><td class="num">41.9</td><td class="num">56.0</td><td class="num">29.1</td><td class="num">28.9</td></tr>
+<tr><td class="rank">17</td><td class="sys">whisper-tiny <span class="tag tag-base">Baseline</span></td><td class="num strong">20.2</td><td class="num">10.7</td><td class="num">41.2</td><td class="num">65.2</td><td class="num">31.6</td><td class="num">28.9</td></tr>
+<tr><td class="rank">18</td><td class="sys">wav2vec2-xlsr-ko <span class="tag tag-base">Baseline</span></td><td class="num strong">0.0</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">100.0</td><td class="num">39.2</td><td class="num">36.7</td></tr>
+</tbody></table></div>
+<p class="note">모든 시스템은 같은 평가 데이터와 같은 채점 코드로 평가했습니다. 순위는 전체 NEM 기준이며, 같으면 DER이 낮은 순서입니다. 단위는 %입니다.</p>
+<h3>Key Findings</h3>
+<div class="grid3">
+<div class="method"><div class="head">CER로는 보이지 않는 오류</div><p>whisper-large-v3는 CER 7.4%로 낮지만 NEM은 64.7%입니다. 숫자가 들어간 발화 3개 중 1개 이상에서 숫자를 정확히 받아쓰지 못했습니다.</p></div>
+<div class="method"><div class="head">큰 모델이 항상 낫지는 않다</div><p>그대로의 출력에서는 whisper-medium(NEM 72.9)이 large-v3(64.7)보다 높습니다. large 계열은 금액을 <code>6,700만 원</code>처럼 혼합 표기로 쓰는 경향이 강해 금액 NEM이 28.3%에 그쳤습니다.</p></div>
+<div class="method"><div class="head">K-ITN의 효과</div><p>K-ITN 적용 후 large-v3의 금액 NEM은 28.3% → 96.7%, 발음형으로 출력하는 wav2vec2는 전체 NEM 0.0% → 36.5%로 올랐습니다.</p></div>
+<div class="method"><div class="head">NumPrompt의 효과</div><p>추가 학습 없이 프롬프트만으로 large-v3-turbo의 NEM이 67.7% → 71.6%로 올랐고, K-ITN과 결합한 시스템이 84.9%로 1위입니다.</p></div>
+<div class="method"><div class="head">가장 어려운 유형: 자릿수 읽기</div><p>전화번호와 계좌번호는 최고 성능도 각각 78.3%, 76.7%입니다. 자릿수 누락·치환(예: <code>5881 → 588</code>) 같은 인식 오류라 후처리로는 고칠 수 없으며, 향후 과제로 남습니다.</p></div>
+<div class="method"><div class="head">평가 데이터 표기의 한계</div><p>FLEURS 정답에는 <code>4만 명</code>처럼 혼합 표기가 섞여 있어, K-ITN이 이를 40000으로 바꾸면 NEM에서 오답이 됩니다. 이런 표기 차이는 NEM-norm에서 정답과 예측을 함께 정규화해 따로 진단합니다.</p></div>
+</div>
+
+<h3>유형별 NEM</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>System</th><th>전화번호</th><th>계좌번호</th><th>금액</th><th>날짜·시간</th><th>고유어 수량</th><th>FLEURS</th></tr></thead>
+<tbody>
+<tr><td class="sys">whisper-large-v3-turbo + NumPrompt + K-ITN</td><td class="num">68.3</td><td class="num">76.7</td><td class="num">98.3</td><td class="num">98.3</td><td class="num">100.0</td><td class="num">77.2</td></tr>
+<tr><td class="sys">whisper-large-v3 + K-ITN</td><td class="num">78.3</td><td class="num">60.0</td><td class="num">96.7</td><td class="num">96.7</td><td class="num">98.3</td><td class="num">76.5</td></tr>
+<tr><td class="sys">whisper-large-v3-turbo + K-ITN</td><td class="num">65.0</td><td class="num">75.0</td><td class="num">98.3</td><td class="num">98.3</td><td class="num">98.3</td><td class="num">73.5</td></tr>
+<tr><td class="sys">whisper-medium + K-ITN</td><td class="num">56.7</td><td class="num">50.0</td><td class="num">95.0</td><td class="num">98.3</td><td class="num">98.3</td><td class="num">88.2</td></tr>
+<tr><td class="sys">whisper-medium</td><td class="num">56.7</td><td class="num">50.0</td><td class="num">35.0</td><td class="num">98.3</td><td class="num">86.7</td><td class="num">89.7</td></tr>
+<tr><td class="sys">whisper-large-v3-turbo + NumPrompt</td><td class="num">68.3</td><td class="num">76.7</td><td class="num">25.0</td><td class="num">98.3</td><td class="num">98.3</td><td class="num">67.6</td></tr>
+<tr><td class="sys">whisper-small + NumPrompt + K-ITN</td><td class="num">33.3</td><td class="num">16.7</td><td class="num">83.3</td><td class="num">90.0</td><td class="num">96.7</td><td class="num">79.4</td></tr>
+<tr><td class="sys">whisper-small + K-ITN</td><td class="num">31.7</td><td class="num">26.7</td><td class="num">86.7</td><td class="num">81.7</td><td class="num">88.3</td><td class="num">80.9</td></tr>
+<tr><td class="sys">whisper-large-v3-turbo</td><td class="num">65.0</td><td class="num">75.0</td><td class="num">26.7</td><td class="num">98.3</td><td class="num">90.0</td><td class="num">60.3</td></tr>
+<tr><td class="sys">whisper-large-v3</td><td class="num">78.3</td><td class="num">60.0</td><td class="num">28.3</td><td class="num">96.7</td><td class="num">70.0</td><td class="num">60.3</td></tr>
+<tr><td class="sys">whisper-small + NumPrompt</td><td class="num">35.0</td><td class="num">16.7</td><td class="num">28.3</td><td class="num">90.0</td><td class="num">93.3</td><td class="num">79.4</td></tr>
+<tr><td class="sys">whisper-small</td><td class="num">36.7</td><td class="num">26.7</td><td class="num">25.0</td><td class="num">81.7</td><td class="num">80.0</td><td class="num">80.9</td></tr>
+<tr><td class="sys">whisper-base + K-ITN</td><td class="num">5.0</td><td class="num">0.0</td><td class="num">75.0</td><td class="num">56.7</td><td class="num">56.7</td><td class="num">67.6</td></tr>
+<tr><td class="sys">whisper-base</td><td class="num">6.7</td><td class="num">0.0</td><td class="num">25.0</td><td class="num">55.0</td><td class="num">40.0</td><td class="num">66.9</td></tr>
+<tr><td class="sys">wav2vec2-xlsr-ko + K-ITN</td><td class="num">0.0</td><td class="num">1.7</td><td class="num">86.7</td><td class="num">68.3</td><td class="num">21.7</td><td class="num">38.2</td></tr>
+<tr><td class="sys">whisper-tiny + K-ITN</td><td class="num">3.3</td><td class="num">0.0</td><td class="num">51.7</td><td class="num">26.7</td><td class="num">31.7</td><td class="num">41.9</td></tr>
+<tr><td class="sys">whisper-tiny</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">8.3</td><td class="num">26.7</td><td class="num">18.3</td><td class="num">41.2</td></tr>
+<tr><td class="sys">wav2vec2-xlsr-ko</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">0.0</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="examples">
+<div class="sec-no">07 · ANALYSIS</div>
+<h2>Error Analysis</h2>
+<p class="note" style="margin-top:0">Baseline: whisper-large-v3-turbo</p>
+<div class="table-wrap"><table>
+<thead><tr><th>유형</th><th>정답</th><th>Baseline 출력</th><th>+ K-ITN</th></tr></thead>
+<tbody>
+<tr><td>전화번호</td><td>수빈 씨 번호가 010-5881-3998 맞나요?</td><td>수빈 씨 번호가 010-588-3998 맞나요? <span class="tag tag-bad">오답</span></td><td>수빈 씨 번호가 010-588-3998 맞나요? <span class="tag tag-bad">오답</span></td></tr>
+<tr><td>계좌번호</td><td>계좌번호는 우리은행 8556-898-329822입니다.</td><td>계좌번호는 우리은행 8556-898-32982입니다. <span class="tag tag-bad">오답</span></td><td>계좌번호는 우리은행 8556-898-32982입니다. <span class="tag tag-bad">오답</span></td></tr>
+<tr><td>금액</td><td>결제하실 금액은 67,000,000원입니다.</td><td>결제하실 금액은 6,700만 원입니다. <span class="tag tag-bad">오답</span></td><td>결제하실 금액은 67000000원입니다. <span class="tag tag-ok">정답</span></td></tr>
+<tr><td>날짜·시간</td><td>2030년 3월 11일에 만나요.</td><td>2030년 3월 10일 이래 만나요. <span class="tag tag-bad">오답</span></td><td>2030년 3월 10일 이래 만나요. <span class="tag tag-bad">오답</span></td></tr>
+<tr><td>고유어 수량</td><td>의자 15개를 샀어요.</td><td>의자 열다섯 개를 샀어요. <span class="tag tag-bad">오답</span></td><td>의자 15개를 샀어요. <span class="tag tag-ok">정답</span></td></tr>
+</tbody></table></div>
+</section>
+
+<section id="references">
+<div class="sec-no">08 · RESOURCES</div>
+<h2>Code, Dataset &amp; References</h2>
+<div class="links">
+<a class="link" href="https://github.com/JinsooKim0118/K-NumASR" target="_blank" rel="noopener"><div class="k">REPOSITORY</div><div class="v">K-NumASR ↗</div><div class="d">전체 코드, 데이터, 결과</div></a>
+<a class="link" href="https://github.com/JinsooKim0118/K-NumASR/blob/main/scripts/run_asr.py" target="_blank" rel="noopener"><div class="k">BASELINE</div><div class="v">run_asr.py ↗</div><div class="d">Whisper / wav2vec2 추론, NumPrompt</div></a>
+<a class="link" href="https://github.com/JinsooKim0118/K-NumASR/tree/main/data" target="_blank" rel="noopener"><div class="k">DATASET</div><div class="v">data/ ↗</div><div class="d">평가 음성과 정답 (metadata.csv)</div></a>
+<a class="link" href="https://github.com/JinsooKim0118/K-NumASR/blob/main/scripts/evaluate.py" target="_blank" rel="noopener"><div class="k">EVALUATION</div><div class="v">evaluate.py ↗</div><div class="d">NEM, DER, CER 계산과 리더보드 생성</div></a>
+<a class="link" href="https://github.com/JinsooKim0118/K-NumASR/blob/main/knumasr/itn.py" target="_blank" rel="noopener"><div class="k">METHOD</div><div class="v">K-ITN ↗</div><div class="d">한국어 숫자 ITN 구현</div></a>
+<a class="link" href="https://github.com/JinsooKim0118/K-NumASR/blob/main/notebooks/K_NumASR_Colab.ipynb" target="_blank" rel="noopener"><div class="k">REPRODUCE</div><div class="v">Colab Notebook ↗</div><div class="d">데이터 구축부터 리더보드까지 한 번에 실행</div></a>
+</div>
+<h3>References</h3>
+<ol class="refs">
+<li>A. Radford et al., “Robust Speech Recognition via Large-Scale Weak Supervision (Whisper),” ICML 2023.</li>
+<li>A. Conneau et al., “FLEURS: Few-shot Learning Evaluation of Universal Representations of Speech,” IEEE SLT 2022. <a href="https://huggingface.co/datasets/google/fleurs" target="_blank" rel="noopener">google/fleurs</a></li>
+<li>A. Babu et al., “XLS-R: Self-supervised Cross-lingual Speech Representation Learning at Scale,” Interspeech 2022.</li>
+<li>Y. Zhang et al., “NeMo Inverse Text Normalization: From Development to Production,” Interspeech 2021.</li>
+<li>V. Pratap et al., “Scaling Speech Technology to 1,000+ Languages (MMS),” JMLR 2024.</li>
+<li>Hugging Face, “Open ASR Leaderboard.” <a href="https://huggingface.co/spaces/hf-audio/open_asr_leaderboard" target="_blank" rel="noopener">hf-audio/open_asr_leaderboard</a></li>
+<li>Bingsu, “Zeroth-Korean.” <a href="https://huggingface.co/datasets/Bingsu/zeroth-korean" target="_blank" rel="noopener">Bingsu/zeroth-korean</a></li>
+</ol>
+</section>
+</main>
+<footer><div class="wrap">Speech Recognition Challenge 2026 · K-NumASR · Team 김진수 · <a href="#top" style="color:#c9d3ee">Top ↑</a></div></footer>
+</body>
+</html>
